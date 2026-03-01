@@ -11,7 +11,8 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex h-full items-center justify-center overflow-hidden bg-gradient-to-b from-blue-950 to-black p-6">
+    <div className="relative flex h-full items-center justify-center overflow-hidden p-6">
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-blue-950 to-black" />
       <Card className="w-full max-w-md border-blue-700/60 bg-blue-950/80 text-white">
         <CardHeader>
           <div className="mb-2 flex justify-center">
