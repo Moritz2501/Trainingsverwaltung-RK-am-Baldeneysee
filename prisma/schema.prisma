@@ -99,9 +99,8 @@ model Announcement {
 
 model Athlete {
   id        String                @id @default(cuid())
-  firstName String
-  lastName  String
-  notes     String?
+  name      String
+  birthDate DateTime?
   active    Boolean               @default(true)
   groupId   String
   createdAt DateTime              @default(now())
@@ -117,7 +116,6 @@ model AthleteTrainingEntry {
   athleteId    String
   trainingDate DateTime
   result       String
-  notes        String?
   createdAt    DateTime @default(now())
   athlete      Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 

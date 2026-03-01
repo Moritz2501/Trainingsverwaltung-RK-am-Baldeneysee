@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
 import { Menu, X } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 
@@ -50,7 +51,12 @@ export function ProtectedShell({ role, children }: { role: Role; children: React
             Menü
           </Button>
         </div>
-        <main className="p-4 lg:p-8">{children}</main>
+        <main className="p-4 lg:p-8">
+          <div className="mb-4">
+            <BackButton />
+          </div>
+          {children}
+        </main>
       </div>
     </div>
   );

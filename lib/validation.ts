@@ -61,9 +61,8 @@ export const assignmentSchema = z.object({
 
 export const athleteSchema = z.object({
   groupId: z.string().min(1, "Ungültige Gruppen-ID."),
-  firstName: z.string().trim().min(2).max(80),
-  lastName: z.string().trim().min(2).max(80),
-  notes: z.string().trim().max(1500).optional().or(z.literal("")),
+  name: z.string().trim().min(2).max(120),
+  birthDate: z.coerce.date(),
   active: z.boolean().default(true),
 });
 
@@ -71,11 +70,16 @@ export const updateAthleteSchema = athleteSchema.extend({
   id: z.string().cuid(),
 });
 
+export const moveAthletesSchema = z.object({
+  sourceGroupId: z.string().min(1, "Ungültige Gruppen-ID."),
+  targetGroupId: z.string().min(1, "Ungültige Zielgruppen-ID."),
+  athleteIds: z.array(z.string().cuid()).min(1, "Bitte mindestens einen Sportler auswählen."),
+});
+
 export const athleteTrainingEntrySchema = z.object({
   athleteId: z.string().cuid(),
   trainingDate: z.coerce.date(),
   result: z.string().trim().min(2).max(1000),
-  notes: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
 export const calendarEventSchema = z

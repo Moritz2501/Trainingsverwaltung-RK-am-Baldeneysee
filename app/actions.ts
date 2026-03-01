@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { canManageAnnouncements, canManageCalendar, canManageGroups, canManageUsers } from "@/lib/rbac";
 import {
   announcementSchema,
+  moveAthletesSchema,
   athleteSchema,
   athleteTrainingEntrySchema,
   assignmentSchema,
@@ -247,9 +248,8 @@ export async function createAthleteAction(formData: FormData) {
 
   const parsed = athleteSchema.safeParse({
     groupId: String(formData.get("groupId") ?? ""),
-    firstName: String(formData.get("firstName") ?? ""),
-    lastName: String(formData.get("lastName") ?? ""),
-    notes: String(formData.get("notes") ?? ""),
+    name: String(formData.get("name") ?? ""),
+    birthDate: String(formData.get("birthDate") ?? ""),
     active: checkboxValue(formData.get("active")),
   });
 
@@ -262,9 +262,8 @@ export async function createAthleteAction(formData: FormData) {
   await prisma.athlete.create({
     data: {
       groupId: parsed.data.groupId,
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      notes: parsed.data.notes || null,
+      name: parsed.data.name,
+      birthDate: parsed.data.birthDate,
       active: parsed.data.active,
     },
   });
@@ -278,9 +277,8 @@ export async function updateAthleteAction(formData: FormData) {
   const parsed = updateAthleteSchema.safeParse({
     id: String(formData.get("id") ?? ""),
     groupId: String(formData.get("groupId") ?? ""),
-    firstName: String(formData.get("firstName") ?? ""),
-    lastName: String(formData.get("lastName") ?? ""),
-    notes: String(formData.get("notes") ?? ""),
+    name: String(formData.get("name") ?? ""),
+    birthDate: String(formData.get("birthDate") ?? ""),
     active: checkboxValue(formData.get("active")),
   });
 
@@ -293,9 +291,8 @@ export async function updateAthleteAction(formData: FormData) {
   await prisma.athlete.update({
     where: { id: parsed.data.id },
     data: {
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      notes: parsed.data.notes || null,
+      name: parsed.data.name,
+      birthDate: parsed.data.birthDate,
       active: parsed.data.active,
     },
   });
@@ -321,7 +318,6 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
     athleteId: String(formData.get("athleteId") ?? ""),
     trainingDate: String(formData.get("trainingDate") ?? ""),
     result: String(formData.get("result") ?? ""),
-    notes: String(formData.get("notes") ?? ""),
   });
 
   if (!parsed.success) {
@@ -340,11 +336,44 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
       athleteId: parsed.data.athleteId,
       trainingDate: parsed.data.trainingDate,
       result: parsed.data.result,
-      notes: parsed.data.notes || null,
     },
   });
 
   revalidatePath(`/groups/${athlete.groupId}`);
+}
+
+export async function moveAthletesAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = moveAthletesSchema.safeParse({
+    sourceGroupId: String(formData.get("sourceGroupId") ?? ""),
+    targetGroupId: String(formData.get("targetGroupId") ?? ""),
+    athleteIds: formData.getAll("athleteIds").map((value) => String(value)),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  if (parsed.data.sourceGroupId === parsed.data.targetGroupId) {
+    throw new Error("Quell- und Zielgruppe dürfen nicht identisch sein.");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, parsed.data.sourceGroupId);
+  await canEditGroup(session.user.id, session.user.role, parsed.data.targetGroupId);
+
+  await prisma.athlete.updateMany({
+    where: {
+      id: { in: parsed.data.athleteIds },
+      groupId: parsed.data.sourceGroupId,
+    },
+    data: {
+      groupId: parsed.data.targetGroupId,
+    },
+  });
+
+  revalidatePath(`/groups/${parsed.data.sourceGroupId}`);
+  revalidatePath(`/groups/${parsed.data.targetGroupId}`);
 }
 
 export async function removeTrainerFromGroupAction(formData: FormData) {

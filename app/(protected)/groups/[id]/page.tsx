@@ -5,6 +5,7 @@ import {
   createAthleteAction,
   createAthleteTrainingEntryAction,
   deleteAthleteAction,
+  moveAthletesAction,
   updateAthleteAction,
   updateGroupAction,
 } from "@/app/actions";
@@ -17,9 +18,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GroupDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
+}) {
   const session = await requireAuth();
   const { id } = await params;
+  const { q } = await searchParams;
+  const query = (q ?? "").trim();
 
   const group = await prisma.trainingGroup.findUnique({
     where: { id },
@@ -32,7 +41,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
             take: 5,
           },
         },
-        orderBy: [{ active: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
+        orderBy: [{ active: "desc" }, { name: "asc" }],
       },
     },
   });
@@ -53,7 +62,16 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     orderBy: { displayName: "asc" },
   });
 
+  const moveTargets = await prisma.trainingGroup.findMany({
+    where: { id: { not: group.id }, active: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+
   const assignedTrainerIds = new Set(group.assignments.map((entry) => entry.userId));
+  const filteredAthletes = query
+    ? group.athletes.filter((athlete) => athlete.name.toLowerCase().includes(query.toLowerCase()))
+    : group.athletes;
 
   return (
     <div className="space-y-6">
@@ -113,16 +131,12 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
             <form action={createAthleteAction} className="grid gap-3 md:grid-cols-2">
               <input type="hidden" name="groupId" value={group.id} />
               <div className="space-y-1">
-                <Label htmlFor="firstName">Vorname</Label>
-                <Input id="firstName" name="firstName" required />
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" name="name" required />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="lastName">Nachname</Label>
-                <Input id="lastName" name="lastName" required />
-              </div>
-              <div className="space-y-1 md:col-span-2">
-                <Label htmlFor="athleteNotes">Notizen</Label>
-                <Textarea id="athleteNotes" name="notes" />
+                <Label htmlFor="birthDate">Geburtsdatum</Label>
+                <Input id="birthDate" name="birthDate" type="date" required />
               </div>
               <label className="flex items-center gap-2 text-sm md:col-span-2">
                 <input type="checkbox" name="active" defaultChecked /> Aktiv
@@ -138,73 +152,112 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           <CardTitle>Sportlerverwaltung</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {group.athletes.length === 0 ? <p className="text-sm text-muted-foreground">Noch keine Sportler in dieser Gruppe.</p> : null}
-          {group.athletes.map((athlete) => (
-            <div key={athlete.id} className="space-y-3 rounded-lg border border-border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold">
-                  {athlete.firstName} {athlete.lastName}
-                </h3>
-                <span className={`text-xs ${athlete.active ? "text-green-400" : "text-red-400"}`}>{athlete.active ? "Aktiv" : "Inaktiv"}</span>
-              </div>
+          <form method="GET" className="flex flex-col gap-2 md:flex-row md:items-end">
+            <div className="w-full space-y-1 md:max-w-md">
+              <Label htmlFor="q">Sportler suchen</Label>
+              <Input id="q" name="q" defaultValue={query} placeholder="Name eingeben..." />
+            </div>
+            <Button type="submit" variant="outline">
+              Suchen
+            </Button>
+          </form>
 
-              {canEdit ? (
-                <form action={updateAthleteAction} className="grid gap-2 md:grid-cols-2">
-                  <input type="hidden" name="id" value={athlete.id} />
-                  <input type="hidden" name="groupId" value={group.id} />
-                  <Input name="firstName" defaultValue={athlete.firstName} required />
-                  <Input name="lastName" defaultValue={athlete.lastName} required />
-                  <div className="md:col-span-2">
-                    <Textarea name="notes" defaultValue={athlete.notes ?? ""} />
-                  </div>
-                  <label className="flex items-center gap-2 text-sm md:col-span-2">
-                    <input type="checkbox" name="active" defaultChecked={athlete.active} /> Aktiv
+          {canEdit && moveTargets.length > 0 ? (
+            <form action={moveAthletesAction} className="rounded-lg border border-border p-3">
+              <input type="hidden" name="sourceGroupId" value={group.id} />
+              <p className="mb-2 text-sm font-medium">Mehrere Sportler gleichzeitig verschieben</p>
+              <div className="grid gap-2 md:grid-cols-2">
+                {filteredAthletes.map((athlete) => (
+                  <label key={`move-${athlete.id}`} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                    <input type="checkbox" name="athleteIds" value={athlete.id} />
+                    {athlete.name}
                   </label>
-                  <div className="flex flex-wrap gap-2 md:col-span-2">
-                    <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
-                      Sportler aktualisieren
-                    </Button>
-                  </div>
-                </form>
-              ) : null}
-
-              {canEdit ? (
-                <form action={createAthleteTrainingEntryAction} className="grid gap-2 md:grid-cols-4">
-                  <input type="hidden" name="athleteId" value={athlete.id} />
-                  <Input type="date" name="trainingDate" required />
-                  <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />
-                  <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
-                    Ergebnis speichern
-                  </Button>
-                  <div className="md:col-span-4">
-                    <Textarea name="notes" placeholder="Notiz zum Ergebnis" />
-                  </div>
-                </form>
-              ) : null}
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Letzte Trainingsdaten</p>
-                {athlete.entries.length === 0 ? <p className="text-xs text-muted-foreground">Noch keine Einträge.</p> : null}
-                {athlete.entries.map((entry) => (
-                  <div key={entry.id} className="rounded-md border border-border bg-accent/20 p-2 text-sm">
-                    <p>
-                      {entry.trainingDate.toLocaleDateString("de-DE")}: {entry.result}
-                    </p>
-                    {entry.notes ? <p className="text-xs text-muted-foreground">{entry.notes}</p> : null}
-                  </div>
                 ))}
               </div>
+              <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center">
+                <select name="targetGroupId" className="h-10 rounded-md border border-border bg-background px-3 text-sm" required>
+                  <option value="">Zielgruppe wählen</option>
+                  {moveTargets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {target.name}
+                    </option>
+                  ))}
+                </select>
+                <Button className="bg-blue-700 text-white hover:bg-blue-600">Ausgewählte Sportler verschieben</Button>
+              </div>
+            </form>
+          ) : null}
 
-              {canEdit ? (
-                <form action={deleteAthleteAction}>
-                  <input type="hidden" name="id" value={athlete.id} />
-                  <input type="hidden" name="groupId" value={group.id} />
-                  <Button variant="destructive" size="sm">
-                    Sportler löschen
-                  </Button>
-                </form>
-              ) : null}
-            </div>
+          {filteredAthletes.length === 0 ? <p className="text-sm text-muted-foreground">Keine passenden Sportler gefunden.</p> : null}
+          {filteredAthletes.map((athlete) => (
+            <details key={athlete.id} className="rounded-lg border border-border p-3">
+              <summary className="cursor-pointer list-none font-semibold">{athlete.name}</summary>
+
+              <div className="mt-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Geburtsdatum: {athlete.birthDate ? athlete.birthDate.toLocaleDateString("de-DE") : "-"}
+                  </p>
+                  <span className={`text-xs ${athlete.active ? "text-green-400" : "text-red-400"}`}>{athlete.active ? "Aktiv" : "Inaktiv"}</span>
+                </div>
+
+                {canEdit ? (
+                  <form action={updateAthleteAction} className="grid gap-2 md:grid-cols-2">
+                    <input type="hidden" name="id" value={athlete.id} />
+                    <input type="hidden" name="groupId" value={group.id} />
+                    <Input name="name" defaultValue={athlete.name} required className="md:col-span-1" />
+                    <Input
+                      type="date"
+                      name="birthDate"
+                      defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""}
+                      required
+                      className="md:col-span-1"
+                    />
+                    <label className="flex items-center gap-2 text-sm md:col-span-2">
+                      <input type="checkbox" name="active" defaultChecked={athlete.active} /> Aktiv
+                    </label>
+                    <div className="flex flex-wrap gap-2 md:col-span-2">
+                      <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
+                        Sportler aktualisieren
+                      </Button>
+                    </div>
+                  </form>
+                ) : null}
+
+                {canEdit ? (
+                  <form action={createAthleteTrainingEntryAction} className="grid gap-2 md:grid-cols-4">
+                    <input type="hidden" name="athleteId" value={athlete.id} />
+                    <Input type="date" name="trainingDate" required />
+                    <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />
+                    <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
+                      Ergebnis speichern
+                    </Button>
+                  </form>
+                ) : null}
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Letzte Trainingsdaten</p>
+                  {athlete.entries.length === 0 ? <p className="text-xs text-muted-foreground">Noch keine Einträge.</p> : null}
+                  {athlete.entries.map((entry) => (
+                    <div key={entry.id} className="rounded-md border border-border bg-accent/20 p-2 text-sm">
+                      <p>
+                        {entry.trainingDate.toLocaleDateString("de-DE")}: {entry.result}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {canEdit ? (
+                  <form action={deleteAthleteAction}>
+                    <input type="hidden" name="id" value={athlete.id} />
+                    <input type="hidden" name="groupId" value={group.id} />
+                    <Button variant="destructive" size="sm">
+                      Sportler löschen
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
+            </details>
           ))}
         </CardContent>
       </Card>
