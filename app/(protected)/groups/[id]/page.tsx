@@ -141,7 +141,7 @@ export default async function GroupDetailPage({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="birthDate">Geburtsdatum</Label>
-                <Input id="birthDate" name="birthDate" type="date" required />
+                <Input id="birthDate" name="birthDate" type="date" />
               </div>
               <label className="flex items-center gap-2 text-sm md:col-span-2">
                 <input type="checkbox" name="active" defaultChecked /> Aktiv

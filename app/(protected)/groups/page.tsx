@@ -67,19 +67,21 @@ export default async function GroupsPage() {
               <p className="text-xs text-muted-foreground">
                 Trainer: {group.assignments.map((entry) => entry.user.displayName).join(", ") || "Nicht zugewiesen"}
               </p>
-              <Link href={`/groups/${group.id}`}>
-                <Button variant="outline" className="w-full hover:bg-blue-700/20">
-                  Details öffnen
-                </Button>
-              </Link>
-              {canManageGroups(session.user.role) ? (
-                <form action={deleteGroupAction}>
-                  <input type="hidden" name="id" value={group.id} />
-                  <Button type="submit" variant="destructive" className="w-full">
-                    Trainingsgruppe löschen
+              <div className="space-y-4 pt-1">
+                <Link href={`/groups/${group.id}`}>
+                  <Button variant="outline" className="w-full hover:bg-blue-700/20">
+                    Details öffnen
                   </Button>
-                </form>
-              ) : null}
+                </Link>
+                {canManageGroups(session.user.role) ? (
+                  <form action={deleteGroupAction}>
+                    <input type="hidden" name="id" value={group.id} />
+                    <Button type="submit" variant="destructive" className="w-full">
+                      Trainingsgruppe löschen
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         ))}

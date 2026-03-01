@@ -51,7 +51,7 @@ export default async function AthletesDatabasePage({
             </div>
             <div className="space-y-1">
               <Label htmlFor="birthDate">Geburtsdatum</Label>
-              <Input id="birthDate" name="birthDate" type="date" required />
+              <Input id="birthDate" name="birthDate" type="date" />
             </div>
             <div className="space-y-1 md:col-span-2">
               <Label htmlFor="groupId">Trainingsgruppe zuweisen</Label>

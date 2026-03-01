@@ -60,7 +60,13 @@ export const assignmentSchema = z.object({
 export const athleteSchema = z.object({
   groupId: z.string().min(1, "Ungültige Gruppen-ID."),
   name: z.string().trim().min(2).max(120),
-  birthDate: z.coerce.date(),
+  birthDate: z.preprocess((value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+    const normalized = value.trim();
+    return normalized.length === 0 ? undefined : normalized;
+  }, z.coerce.date().optional()),
   active: z.boolean().default(true),
 });
 

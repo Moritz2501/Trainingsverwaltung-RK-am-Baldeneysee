@@ -288,7 +288,7 @@ export async function createAthleteAction(formData: FormData) {
     data: {
       groupId: parsed.data.groupId,
       name: parsed.data.name,
-      birthDate: parsed.data.birthDate,
+      birthDate: parsed.data.birthDate ?? null,
       active: parsed.data.active,
     },
   });
@@ -321,7 +321,7 @@ export async function updateAthleteAction(formData: FormData) {
     where: { id: parsed.data.id },
     data: {
       name: parsed.data.name,
-      birthDate: parsed.data.birthDate,
+      birthDate: parsed.data.birthDate ?? null,
       active: parsed.data.active,
     },
   });

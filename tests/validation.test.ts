@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Role } from "@prisma/client";
-import { assignmentSchema, createUserSchema, trainingGroupSchema } from "../lib/validation";
+import { assignmentSchema, athleteSchema, createUserSchema, trainingGroupSchema } from "../lib/validation";
 
 describe("validation schemas", () => {
   it("validates createUser input", () => {
@@ -53,6 +53,17 @@ describe("validation schemas", () => {
     const result = assignmentSchema.safeParse({
       groupId: "seed-group-2026",
       userIds: [],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("allows creating athlete without birth date", () => {
+    const result = athleteSchema.safeParse({
+      groupId: "group-legacy-1",
+      name: "Max Beispiel",
+      birthDate: "",
+      active: true,
     });
 
     expect(result.success).toBe(true);
