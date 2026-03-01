@@ -27,6 +27,18 @@ describe("validation schemas", () => {
     expect(result.success).toBe(true);
   });
 
+  it("allows additional punctuation in username", () => {
+    const result = createUserSchema.safeParse({
+      username: "team,leitung:(rk)/essen",
+      displayName: "Team Leitung",
+      role: Role.LEITUNG,
+      password: "starkesPasswort123!",
+      active: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("rejects invalid group name", () => {
     const result = trainingGroupSchema.safeParse({
       name: "G",
