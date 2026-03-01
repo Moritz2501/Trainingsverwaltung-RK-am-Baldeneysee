@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "127.0.0.1:3001",
     "*.app.github.dev",
     "*.githubpreview.dev",
+    "*.vercel.app",
   ],
   experimental: {
     serverActions: {
@@ -18,6 +19,7 @@ const nextConfig: NextConfig = {
         "127.0.0.1:3001",
         "*.app.github.dev",
         "*.githubpreview.dev",
+        "*.vercel.app",
       ],
     },
   },
