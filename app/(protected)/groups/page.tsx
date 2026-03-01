@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createGroupAction } from "@/app/actions";
+import { createGroupAction, deleteGroupAction } from "@/app/actions";
 import { requireAuth } from "@/lib/auth";
 import { canManageGroups, canSeeAllGroups } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
@@ -72,6 +72,14 @@ export default async function GroupsPage() {
                   Details öffnen
                 </Button>
               </Link>
+              {canManageGroups(session.user.role) ? (
+                <form action={deleteGroupAction}>
+                  <input type="hidden" name="id" value={group.id} />
+                  <Button type="submit" variant="destructive" className="w-full">
+                    Trainingsgruppe löschen
+                  </Button>
+                </form>
+              ) : null}
             </CardContent>
           </Card>
         ))}

@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import { createUserAction } from "@/app/actions";
 import { requireRole } from "@/lib/auth";
+import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,10 @@ export default async function NewUserPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-3xl font-bold">Neuen Benutzer anlegen</h1>
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-3xl font-bold">Neuen Benutzer anlegen</h1>
+        <BackButton fallbackHref="/admin/users" label="Zurück zur Benutzerverwaltung" />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Accountdaten</CardTitle>

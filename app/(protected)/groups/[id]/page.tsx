@@ -10,7 +10,7 @@ import {
   updateGroupAction,
 } from "@/app/actions";
 import { requireAuth } from "@/lib/auth";
-import { canManageGroups } from "@/lib/rbac";
+import { canManageGroups, canMoveAthletes } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,7 @@ export default async function GroupDetailPage({
   });
 
   const assignedTrainerIds = new Set(group.assignments.map((entry) => entry.userId));
+  const canMoveBetweenGroups = canMoveAthletes(session.user.role);
   const filteredAthletes = query
     ? group.athletes.filter((athlete) => athlete.name.toLowerCase().includes(query.toLowerCase()))
     : group.athletes;
@@ -166,7 +167,7 @@ export default async function GroupDetailPage({
             </Button>
           </form>
 
-          {canEdit && moveTargets.length > 0 ? (
+          {canEdit && canMoveBetweenGroups && moveTargets.length > 0 ? (
             <form action={moveAthletesAction} className="rounded-lg border border-border p-3">
               <input type="hidden" name="sourceGroupId" value={group.id} />
               <p className="mb-2 text-sm font-medium">Mehrere Sportler gleichzeitig verschieben</p>

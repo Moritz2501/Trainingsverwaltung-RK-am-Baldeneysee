@@ -3,7 +3,7 @@
 import { AnnouncementPriority, EventType, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { canManageAnnouncements, canManageCalendar, canManageGroups, canManageUsers } from "@/lib/rbac";
+import { canManageAnnouncements, canManageAthletes, canManageCalendar, canManageGroups, canManageUsers, canMoveAthletes } from "@/lib/rbac";
 import {
   announcementSchema,
   moveAthletesSchema,
@@ -194,6 +194,24 @@ export async function updateGroupAction(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
 }
 
+export async function deleteGroupAction(formData: FormData) {
+  const session = await requireAuth();
+  if (!canManageGroups(session.user.role)) {
+    return;
+  }
+
+  const groupId = String(formData.get("id") ?? "");
+  if (!groupId) {
+    throw new Error("Gruppen-ID fehlt");
+  }
+
+  await prisma.trainingGroup.delete({ where: { id: groupId } });
+
+  revalidatePath("/groups");
+  revalidatePath("/dashboard");
+  revalidatePath("/athletes");
+}
+
 export async function assignTrainerToGroupAction(formData: FormData) {
   const session = await requireAuth();
   if (!canManageGroups(session.user.role)) {
@@ -233,6 +251,10 @@ async function canEditGroup(sessionUserId: string, role: Role, groupId: string) 
     throw new Error("Gruppe nicht gefunden");
   }
 
+  if (canManageAthletes(role)) {
+    return group;
+  }
+
   const assigned = group.assignments.some((entry) => entry.userId === sessionUserId);
   const allowed = canManageGroups(role) || assigned;
 
@@ -245,6 +267,9 @@ async function canEditGroup(sessionUserId: string, role: Role, groupId: string) 
 
 export async function createAthleteAction(formData: FormData) {
   const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
 
   const parsed = athleteSchema.safeParse({
     groupId: String(formData.get("groupId") ?? ""),
@@ -269,10 +294,14 @@ export async function createAthleteAction(formData: FormData) {
   });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);
+  revalidatePath("/athletes");
 }
 
 export async function updateAthleteAction(formData: FormData) {
   const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
 
   const parsed = updateAthleteSchema.safeParse({
     id: String(formData.get("id") ?? ""),
@@ -298,10 +327,14 @@ export async function updateAthleteAction(formData: FormData) {
   });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);
+  revalidatePath("/athletes");
 }
 
 export async function deleteAthleteAction(formData: FormData) {
   const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
   const id = String(formData.get("id") ?? "");
   const groupId = String(formData.get("groupId") ?? "");
 
@@ -309,10 +342,14 @@ export async function deleteAthleteAction(formData: FormData) {
 
   await prisma.athlete.delete({ where: { id } });
   revalidatePath(`/groups/${groupId}`);
+  revalidatePath("/athletes");
 }
 
 export async function createAthleteTrainingEntryAction(formData: FormData) {
   const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
 
   const parsed = athleteTrainingEntrySchema.safeParse({
     athleteId: String(formData.get("athleteId") ?? ""),
@@ -344,6 +381,9 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
 
 export async function moveAthletesAction(formData: FormData) {
   const session = await requireAuth();
+  if (!canMoveAthletes(session.user.role)) {
+    throw new Error("Nur die Leitung darf Sportler zwischen Gruppen verschieben.");
+  }
 
   const parsed = moveAthletesSchema.safeParse({
     sourceGroupId: String(formData.get("sourceGroupId") ?? ""),
@@ -374,6 +414,7 @@ export async function moveAthletesAction(formData: FormData) {
 
   revalidatePath(`/groups/${parsed.data.sourceGroupId}`);
   revalidatePath(`/groups/${parsed.data.targetGroupId}`);
+  revalidatePath("/athletes");
 }
 
 export async function removeTrainerFromGroupAction(formData: FormData) {

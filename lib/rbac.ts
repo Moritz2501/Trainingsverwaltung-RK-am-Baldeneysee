@@ -16,6 +16,14 @@ export function canManageAnnouncements(role: Role) {
   return role === Role.ADMIN || role === Role.LEITUNG;
 }
 
+export function canManageAthletes(role: Role) {
+  return role === Role.ADMIN || role === Role.LEITUNG || role === Role.TRAINER;
+}
+
+export function canMoveAthletes(role: Role) {
+  return role === Role.LEITUNG;
+}
+
 export function canSeeAllGroups(role: Role) {
   return role === Role.ADMIN || role === Role.LEITUNG;
 }
