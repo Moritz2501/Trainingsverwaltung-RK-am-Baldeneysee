@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "RK Baldeneysee Trainerportal",
-    short_name: "RK Trainer",
+    name: "RaB Trainer",
+    short_name: "RaB Trainer",
     description: "Interne Trainingsverwaltung für den Ruderklub am Baldeneysee",
     start_url: "/",
     display: "standalone",

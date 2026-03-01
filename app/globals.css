@@ -63,6 +63,20 @@ body {
   border-color: var(--border);
 }
 
+@keyframes heartbeat-scale {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.animate-heartbeat-scale {
+  animation: heartbeat-scale 1.2s ease-in-out infinite;
+}
+
 @media (display-mode: standalone) {
   .home-app-background {
     background-image: url("/rk.png");

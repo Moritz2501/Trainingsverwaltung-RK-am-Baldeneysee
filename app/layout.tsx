@@ -26,9 +26,9 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "RK Trainer",
+    title: "RaB Trainer",
   },
-  applicationName: "RK Trainer",
+  applicationName: "RaB Trainer",
   robots: {
     index: false,
     follow: false,
@@ -50,13 +50,13 @@ export default function RootLayout({
         <ThemeProvider>
           <PwaRegister />
           <PwaInstallBanner />
-          <div className="home-app-background min-h-screen bg-background text-foreground">
-            {children}
+          <div className="home-app-background flex min-h-dvh flex-col bg-background text-foreground">
+            <main className="min-h-0 flex-1">{children}</main>
             <footer className="border-t border-border px-4 py-4 text-center text-sm text-muted-foreground">
               <p>© {year} Ruderklub am Baldeneysee – Intern</p>
               <p className="mt-1 flex items-center justify-center gap-1 text-xs">
                 Mit
-                <span className="inline-block animate-pulse text-red-500" aria-label="Herz">
+                <span className="inline-block animate-heartbeat-scale text-red-500" aria-label="Herz">
                   ❤️
                 </span>
                 programmiert von Moritz Döppner
