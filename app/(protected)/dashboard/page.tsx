@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function DashboardPage() {
@@ -42,6 +44,32 @@ export default async function DashboardPage() {
           <CardContent className="text-3xl font-bold">{upcomingEvents.length}</CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Nächste Termine</CardTitle>
+          <Link href="/calendar">
+            <Button variant="outline" size="sm">
+              Zum Kalender
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {upcomingEvents.length === 0 ? <p className="text-sm text-muted-foreground">Keine kommenden Termine vorhanden.</p> : null}
+          {upcomingEvents.map((event) => (
+            <div key={event.id} className="rounded-lg border border-border bg-accent/20 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">{event.title}</h3>
+                <Badge variant="outline">{event.type}</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {event.startDate.toLocaleDateString("de-DE")} – {event.endDate.toLocaleDateString("de-DE")}
+              </p>
+              <p className="text-sm text-muted-foreground">Ort: {event.location}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

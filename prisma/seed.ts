@@ -30,14 +30,12 @@ async function main() {
     update: {
       name: "Leistungsgruppe A",
       description: "Standardgruppe für Seed-Daten",
-      season: 2026,
       active: true,
     },
     create: {
       id: "seed-group-2026",
       name: "Leistungsgruppe A",
       description: "Standardgruppe für Seed-Daten",
-      season: 2026,
       active: true,
     },
   });

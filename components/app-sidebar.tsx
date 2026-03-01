@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { CalendarDays, Megaphone, Home, Users, UserRound, Layers } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
@@ -29,9 +30,12 @@ export function AppSidebar({ role, pathname, className }: SidebarProps) {
         className,
       )}
     >
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.25em] text-blue-200">Trainerportal</p>
-        <h1 className="text-2xl font-bold">RK Baldeneysee</h1>
+      <div className="mb-8 flex items-center gap-3">
+        <BrandLogo size={44} className="h-11 w-11" priority />
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-blue-200">Trainerportal</p>
+          <h1 className="text-2xl font-bold">RK Baldeneysee</h1>
+        </div>
       </div>
 
       <nav className="space-y-2">

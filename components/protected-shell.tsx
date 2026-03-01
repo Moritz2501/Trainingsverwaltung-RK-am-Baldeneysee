@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
 import { Menu, X } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 
 export function ProtectedShell({ role, children }: { role: Role; children: React.ReactNode }) {
@@ -31,9 +32,12 @@ export function ProtectedShell({ role, children }: { role: Role; children: React
 
       <div className="lg:pl-72">
         <div className="flex items-center justify-between border-b border-border bg-blue-950/80 px-5 py-4 lg:hidden">
-          <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-blue-200">RK Baldeneysee</p>
-            <p className="text-lg font-bold text-white">Trainerportal</p>
+          <div className="flex items-center gap-2">
+            <BrandLogo size={32} className="h-8 w-8" />
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-blue-200">RK Baldeneysee</p>
+              <p className="text-lg font-bold text-white">Trainerportal</p>
+            </div>
           </div>
           <Button
             type="button"

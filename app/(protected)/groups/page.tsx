@@ -14,12 +14,12 @@ export default async function GroupsPage() {
 
   const groups = canSeeAllGroups(session.user.role)
     ? await prisma.trainingGroup.findMany({
-        include: { assignments: { include: { user: true } } },
+        include: { assignments: { include: { user: true } }, _count: { select: { athletes: true } } },
         orderBy: [{ active: "desc" }, { name: "asc" }],
       })
     : await prisma.trainingGroup.findMany({
         where: { assignments: { some: { userId: session.user.id } } },
-        include: { assignments: { include: { user: true } } },
+        include: { assignments: { include: { user: true } }, _count: { select: { athletes: true } } },
         orderBy: { name: "asc" },
       });
 
@@ -37,10 +37,6 @@ export default async function GroupsPage() {
               <div className="space-y-1 md:col-span-1">
                 <Label htmlFor="name">Name</Label>
                 <Input id="name" name="name" required />
-              </div>
-              <div className="space-y-1 md:col-span-1">
-                <Label htmlFor="season">Saison/Jahr</Label>
-                <Input id="season" name="season" type="number" defaultValue={new Date().getFullYear()} required />
               </div>
               <div className="space-y-1 md:col-span-2">
                 <Label htmlFor="description">Beschreibung</Label>
@@ -65,8 +61,9 @@ export default async function GroupsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">Saison {group.season}</p>
+              <p className="text-sm text-muted-foreground">Dauerhafte Trainingsgruppe</p>
               <p className="line-clamp-3 text-sm">{group.description}</p>
+              <p className="text-xs text-muted-foreground">Sportler: {group._count.athletes}</p>
               <p className="text-xs text-muted-foreground">
                 Trainer: {group.assignments.map((entry) => entry.user.displayName).join(", ") || "Nicht zugewiesen"}
               </p>

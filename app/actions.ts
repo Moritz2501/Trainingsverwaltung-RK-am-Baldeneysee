@@ -6,12 +6,15 @@ import { revalidatePath } from "next/cache";
 import { canManageAnnouncements, canManageCalendar, canManageGroups, canManageUsers } from "@/lib/rbac";
 import {
   announcementSchema,
+  athleteSchema,
+  athleteTrainingEntrySchema,
   assignmentSchema,
   calendarEventSchema,
   changePasswordSchema,
   createUserSchema,
   resetPasswordSchema,
   trainingGroupSchema,
+  updateAthleteSchema,
   updateUserSchema,
 } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
@@ -85,6 +88,25 @@ export async function updateUserAction(formData: FormData) {
   revalidatePath("/admin/users");
 }
 
+export async function deleteUserAction(formData: FormData) {
+  const session = await requireRole([Role.ADMIN]);
+  if (!canManageUsers(session.user.role)) {
+    return;
+  }
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) {
+    throw new Error("Benutzer-ID fehlt");
+  }
+
+  if (id === session.user.id) {
+    throw new Error("Du kannst deinen eigenen Account nicht löschen.");
+  }
+
+  await prisma.user.delete({ where: { id } });
+  revalidatePath("/admin/users");
+}
+
 export async function resetUserPasswordAction(formData: FormData) {
   const session = await requireRole([Role.ADMIN]);
   if (!canManageUsers(session.user.role)) {
@@ -118,7 +140,6 @@ export async function createGroupAction(formData: FormData) {
   const parsed = trainingGroupSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     description: String(formData.get("description") ?? ""),
-    season: formData.get("season"),
     active: checkboxValue(formData.get("active")),
   });
 
@@ -156,7 +177,6 @@ export async function updateGroupAction(formData: FormData) {
   const parsed = trainingGroupSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     description: String(formData.get("description") ?? ""),
-    season: formData.get("season"),
     active: checkboxValue(formData.get("active")),
   });
 
@@ -181,28 +201,150 @@ export async function assignTrainerToGroupAction(formData: FormData) {
 
   const parsed = assignmentSchema.safeParse({
     groupId: String(formData.get("groupId") ?? ""),
-    userId: String(formData.get("userId") ?? ""),
+    userIds: formData.getAll("userIds").map((value) => String(value)),
   });
 
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  await prisma.trainingGroupAssignment.upsert({
-    where: {
-      userId_groupId: {
-        userId: parsed.data.userId,
-        groupId: parsed.data.groupId,
-      },
-    },
-    update: {},
-    create: {
-      userId: parsed.data.userId,
+  await prisma.trainingGroupAssignment.deleteMany({
+    where: { groupId: parsed.data.groupId },
+  });
+
+  if (parsed.data.userIds.length > 0) {
+    await prisma.trainingGroupAssignment.createMany({
+      data: parsed.data.userIds.map((userId) => ({ userId, groupId: parsed.data.groupId })),
+      skipDuplicates: true,
+    });
+  }
+
+  revalidatePath(`/groups/${parsed.data.groupId}`);
+}
+
+async function canEditGroup(sessionUserId: string, role: Role, groupId: string) {
+  const group = await prisma.trainingGroup.findUnique({
+    where: { id: groupId },
+    include: { assignments: true },
+  });
+
+  if (!group) {
+    throw new Error("Gruppe nicht gefunden");
+  }
+
+  const assigned = group.assignments.some((entry) => entry.userId === sessionUserId);
+  const allowed = canManageGroups(role) || assigned;
+
+  if (!allowed) {
+    throw new Error("Keine Berechtigung");
+  }
+
+  return group;
+}
+
+export async function createAthleteAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = athleteSchema.safeParse({
+    groupId: String(formData.get("groupId") ?? ""),
+    firstName: String(formData.get("firstName") ?? ""),
+    lastName: String(formData.get("lastName") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+    active: checkboxValue(formData.get("active")),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, parsed.data.groupId);
+
+  await prisma.athlete.create({
+    data: {
       groupId: parsed.data.groupId,
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+      notes: parsed.data.notes || null,
+      active: parsed.data.active,
     },
   });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);
+}
+
+export async function updateAthleteAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = updateAthleteSchema.safeParse({
+    id: String(formData.get("id") ?? ""),
+    groupId: String(formData.get("groupId") ?? ""),
+    firstName: String(formData.get("firstName") ?? ""),
+    lastName: String(formData.get("lastName") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+    active: checkboxValue(formData.get("active")),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, parsed.data.groupId);
+
+  await prisma.athlete.update({
+    where: { id: parsed.data.id },
+    data: {
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+      notes: parsed.data.notes || null,
+      active: parsed.data.active,
+    },
+  });
+
+  revalidatePath(`/groups/${parsed.data.groupId}`);
+}
+
+export async function deleteAthleteAction(formData: FormData) {
+  const session = await requireAuth();
+  const id = String(formData.get("id") ?? "");
+  const groupId = String(formData.get("groupId") ?? "");
+
+  await canEditGroup(session.user.id, session.user.role, groupId);
+
+  await prisma.athlete.delete({ where: { id } });
+  revalidatePath(`/groups/${groupId}`);
+}
+
+export async function createAthleteTrainingEntryAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = athleteTrainingEntrySchema.safeParse({
+    athleteId: String(formData.get("athleteId") ?? ""),
+    trainingDate: String(formData.get("trainingDate") ?? ""),
+    result: String(formData.get("result") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const athlete = await prisma.athlete.findUnique({ where: { id: parsed.data.athleteId } });
+  if (!athlete) {
+    throw new Error("Sportler nicht gefunden");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, athlete.groupId);
+
+  await prisma.athleteTrainingEntry.create({
+    data: {
+      athleteId: parsed.data.athleteId,
+      trainingDate: parsed.data.trainingDate,
+      result: parsed.data.result,
+      notes: parsed.data.notes || null,
+    },
+  });
+
+  revalidatePath(`/groups/${athlete.groupId}`);
 }
 
 export async function removeTrainerFromGroupAction(formData: FormData) {

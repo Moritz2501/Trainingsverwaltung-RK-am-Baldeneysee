@@ -59,6 +59,7 @@ npm install
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rk_baldeneysee"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="bitte-starken-secret-setzen"
+NEXT_PUBLIC_BRAND_LOGO_PATH="/rk-baldeneysee-logo.svg"
 ```
 
 ### 3) Prisma Migration + Client
@@ -88,6 +89,17 @@ npm run dev
 ```
 
 App läuft auf `http://localhost:3000`.
+
+## Eigenes Logo verwenden
+
+1. Lege deine Logo-Datei im Ordner `public/` ab, z. B. `public/mein-logo.png`.
+2. Setze in `.env` (lokal) oder in Vercel ENV:
+
+```env
+NEXT_PUBLIC_BRAND_LOGO_PATH="/mein-logo.png"
+```
+
+3. Neu deployen oder lokal den Dev-Server neu starten.
 
 ## Nützliche Scripts
 

@@ -27,11 +27,10 @@ describe("validation schemas", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects invalid group season", () => {
+  it("rejects invalid group name", () => {
     const result = trainingGroupSchema.safeParse({
-      name: "Gruppe X",
+      name: "G",
       description: "Test",
-      season: 1900,
       active: true,
     });
 

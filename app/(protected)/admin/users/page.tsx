@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
-import { resetUserPasswordAction, updateUserAction } from "@/app/actions";
+import { deleteUserAction, resetUserPasswordAction, updateUserAction } from "@/app/actions";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default async function AdminUsersPage() {
-  await requireRole([Role.ADMIN]);
+  const session = await requireRole([Role.ADMIN]);
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -63,6 +63,16 @@ export default async function AdminUsersPage() {
                   <Input id={`reset-${user.id}`} name="newPassword" type="text" placeholder="Temp1234!" required />
                 </div>
                 <Button variant="secondary" className="hover:bg-blue-700/20">Passwort zurücksetzen</Button>
+
+                {user.id !== session.user.id ? (
+                  <div className="pt-2">
+                    <Button formAction={deleteUserAction} variant="destructive" type="submit">
+                      Benutzer löschen
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Aktueller Admin kann sich nicht selbst löschen.</p>
+                )}
               </form>
             </CardContent>
           </Card>

@@ -49,11 +49,11 @@ model TrainingGroup {
   id          String                    @id @default(cuid())
   name        String
   description String
-  season      Int
   active      Boolean                   @default(true)
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
   assignments TrainingGroupAssignment[]
+  athletes    Athlete[]
 }
 
 // n:m ist hier sinnvoll, weil ein Trainer mehrere Gruppen betreuen kann
@@ -95,4 +95,31 @@ model Announcement {
   updatedAt   DateTime             @updatedAt
   archived    Boolean              @default(false)
   createdBy   User                 @relation("AnnouncementCreator", fields: [createdById], references: [id], onDelete: Restrict)
+}
+
+model Athlete {
+  id        String                @id @default(cuid())
+  firstName String
+  lastName  String
+  notes     String?
+  active    Boolean               @default(true)
+  groupId   String
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  group     TrainingGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  entries   AthleteTrainingEntry[]
+
+  @@index([groupId])
+}
+
+model AthleteTrainingEntry {
+  id           String   @id @default(cuid())
+  athleteId    String
+  trainingDate DateTime
+  result       String
+  notes        String?
+  createdAt    DateTime @default(now())
+  athlete      Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@index([athleteId, trainingDate])
 }

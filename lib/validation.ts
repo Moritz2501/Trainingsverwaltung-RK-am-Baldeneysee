@@ -51,13 +51,31 @@ export const changePasswordSchema = z.object({
 export const trainingGroupSchema = z.object({
   name: z.string().min(2).max(120),
   description: z.string().min(2).max(1000),
-  season: z.coerce.number().int().min(2000).max(2100),
   active: z.boolean().default(true),
 });
 
 export const assignmentSchema = z.object({
   groupId: z.string().cuid(),
-  userId: z.string().cuid(),
+  userIds: z.array(z.string().cuid()).default([]),
+});
+
+export const athleteSchema = z.object({
+  groupId: z.string().cuid(),
+  firstName: z.string().trim().min(2).max(80),
+  lastName: z.string().trim().min(2).max(80),
+  notes: z.string().trim().max(1500).optional().or(z.literal("")),
+  active: z.boolean().default(true),
+});
+
+export const updateAthleteSchema = athleteSchema.extend({
+  id: z.string().cuid(),
+});
+
+export const athleteTrainingEntrySchema = z.object({
+  athleteId: z.string().cuid(),
+  trainingDate: z.coerce.date(),
+  result: z.string().trim().min(2).max(1000),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
 export const calendarEventSchema = z
