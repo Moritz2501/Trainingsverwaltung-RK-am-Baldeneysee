@@ -12,6 +12,7 @@ import {
 import { requireAuth } from "@/lib/auth";
 import { canManageGroups } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
+import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,7 +76,10 @@ export default async function GroupDetailPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Gruppe: {group.name}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-3xl font-bold">Gruppe: {group.name}</h1>
+        <BackButton fallbackHref="/groups" label="Zurück zu Gruppen" />
+      </div>
 
       <Card>
         <CardHeader>
