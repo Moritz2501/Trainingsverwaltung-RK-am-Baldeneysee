@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function DashboardPage() {
-  await requireAuth();
+  const session = await requireAuth();
 
   const now = new Date();
   const [announcementCount, groupCount, upcomingEvents, announcements] = await Promise.all([
@@ -22,7 +22,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-sm font-medium text-muted-foreground">Herzlich Willkommen, {session.user.name ?? session.user.username}</p>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Role } from "@prisma/client";
-import { createUserSchema, trainingGroupSchema } from "../lib/validation";
+import { assignmentSchema, createUserSchema, trainingGroupSchema } from "../lib/validation";
 
 describe("validation schemas", () => {
   it("validates createUser input", () => {
@@ -35,5 +35,14 @@ describe("validation schemas", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it("accepts non-cuid group ids for legacy groups", () => {
+    const result = assignmentSchema.safeParse({
+      groupId: "seed-group-2026",
+      userIds: [],
+    });
+
+    expect(result.success).toBe(true);
   });
 });

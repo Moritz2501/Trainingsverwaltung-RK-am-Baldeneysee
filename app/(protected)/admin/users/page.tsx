@@ -63,17 +63,18 @@ export default async function AdminUsersPage() {
                   <Input id={`reset-${user.id}`} name="newPassword" type="text" placeholder="Temp1234!" required />
                 </div>
                 <Button variant="secondary" className="hover:bg-blue-700/20">Passwort zurücksetzen</Button>
-
-                {user.id !== session.user.id ? (
-                  <div className="pt-2">
-                    <Button formAction={deleteUserAction} variant="destructive" type="submit">
-                      Benutzer löschen
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Aktueller Admin kann sich nicht selbst löschen.</p>
-                )}
               </form>
+
+              {user.id !== session.user.id ? (
+                <form action={deleteUserAction} className="lg:col-span-2">
+                  <input type="hidden" name="id" value={user.id} />
+                  <Button variant="destructive" type="submit">
+                    Benutzer löschen
+                  </Button>
+                </form>
+              ) : (
+                <p className="text-xs text-muted-foreground lg:col-span-2">Aktueller Admin kann sich nicht selbst löschen.</p>
+              )}
             </CardContent>
           </Card>
         ))}
