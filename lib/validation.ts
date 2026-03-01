@@ -2,7 +2,7 @@ import { AnnouncementPriority, EventType, Role } from "@prisma/client";
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  username: z.string().min(3, "Benutzername ist zu kurz."),
+  username: z.string().trim().min(3, "Benutzername ist zu kurz."),
   password: z.string().min(8, "Passwort ist zu kurz."),
 });
 
@@ -13,8 +13,8 @@ export const createUserSchema = z.object({
     .min(3, "Benutzername muss mindestens 3 Zeichen haben.")
     .max(40, "Benutzername darf maximal 40 Zeichen haben.")
     .regex(
-      /^[\p{L}\p{N}._@+\-!#$%&=?]+$/u,
-      "Benutzername darf Buchstaben, Zahlen sowie . _ - @ + ! # $ % & = ? enthalten.",
+      /^[\p{L}\p{N}._@+\-!#$%&=? '\/]+$/u,
+      "Benutzername darf Buchstaben, Zahlen sowie Leerzeichen und . _ - @ + ! # $ % & = ? ' / enthalten.",
     ),
   displayName: z.string().min(2).max(80),
   role: z.nativeEnum(Role),
@@ -30,8 +30,8 @@ export const updateUserSchema = z.object({
     .min(3, "Benutzername muss mindestens 3 Zeichen haben.")
     .max(40, "Benutzername darf maximal 40 Zeichen haben.")
     .regex(
-      /^[\p{L}\p{N}._@+\-!#$%&=?]+$/u,
-      "Benutzername darf Buchstaben, Zahlen sowie . _ - @ + ! # $ % & = ? enthalten.",
+      /^[\p{L}\p{N}._@+\-!#$%&=? '\/]+$/u,
+      "Benutzername darf Buchstaben, Zahlen sowie Leerzeichen und . _ - @ + ! # $ % & = ? ' / enthalten.",
     ),
   displayName: z.string().min(2).max(80),
   role: z.nativeEnum(Role),

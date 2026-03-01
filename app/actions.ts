@@ -32,7 +32,7 @@ export async function createUserAction(formData: FormData) {
   }
 
   const parsed = createUserSchema.safeParse({
-    username: String(formData.get("username") ?? "").toLowerCase(),
+    username: String(formData.get("username") ?? "").trim().toLowerCase(),
     displayName: String(formData.get("displayName") ?? ""),
     role: String(formData.get("role") ?? "TRAINER") as Role,
     password: String(formData.get("password") ?? ""),
@@ -66,7 +66,7 @@ export async function updateUserAction(formData: FormData) {
 
   const parsed = updateUserSchema.safeParse({
     id: String(formData.get("id") ?? ""),
-    username: String(formData.get("username") ?? "").toLowerCase(),
+    username: String(formData.get("username") ?? "").trim().toLowerCase(),
     displayName: String(formData.get("displayName") ?? ""),
     role: String(formData.get("role") ?? "TRAINER") as Role,
     active: checkboxValue(formData.get("active")),

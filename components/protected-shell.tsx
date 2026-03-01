@@ -52,7 +52,7 @@ export function ProtectedShell({ role, children }: { role: Role; children: React
           </Button>
         </div>
         <main className="p-4 lg:p-8">
-          <div className="mb-4">
+          <div className="mb-4 flex justify-end">
             <BackButton />
           </div>
           {children}

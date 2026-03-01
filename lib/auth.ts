@@ -28,7 +28,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const username = parsed.data.username.toLowerCase();
+        const username = parsed.data.username.trim().toLowerCase();
         const password = parsed.data.password;
         const ip = req.headers?.["x-forwarded-for"] ?? "unknown";
         const key = `${username}:${ip}`;

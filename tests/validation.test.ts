@@ -15,9 +15,9 @@ describe("validation schemas", () => {
     expect(result.success).toBe(true);
   });
 
-  it("allows umlauts and special characters in username", () => {
+  it("allows umlauts, spaces and special characters in username", () => {
     const result = createUserSchema.safeParse({
-      username: "jörg.müller+team@rk!",
+      username: "jörg müller+team@rk!'",
       displayName: "Jörg Müller",
       role: Role.TRAINER,
       password: "starkesPasswort123!",
