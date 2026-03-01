@@ -50,7 +50,7 @@ export default async function AthletesDatabasePage({
               <Input id="name" name="name" required />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="birthDate">Geburtsdatum</Label>
+              <Label htmlFor="birthDate">Geburtsdatum (optional)</Label>
               <Input id="birthDate" name="birthDate" type="date" />
             </div>
             <div className="space-y-1 md:col-span-2">
@@ -90,7 +90,7 @@ export default async function AthletesDatabasePage({
           {filteredAthletes.length === 0 ? <p className="text-sm text-muted-foreground">Keine Sportler gefunden.</p> : null}
 
           <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full text-sm">
               <thead className="bg-accent/30 text-left">
                 <tr>
                   <th className="px-3 py-2 font-medium">Name</th>
@@ -112,7 +112,6 @@ export default async function AthletesDatabasePage({
                           type="date"
                           name="birthDate"
                           defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""}
-                          required
                         />
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 text-sm">

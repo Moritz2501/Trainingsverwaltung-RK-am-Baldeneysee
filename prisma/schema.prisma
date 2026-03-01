@@ -116,6 +116,7 @@ model AthleteTrainingEntry {
   athleteId    String
   trainingDate DateTime
   result       String
+  notes        String?
   createdAt    DateTime @default(now())
   athlete      Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 

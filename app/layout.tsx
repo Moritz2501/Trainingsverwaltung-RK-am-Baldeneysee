@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { PwaRegister } from "@/components/pwa-register";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -16,6 +18,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "RK Baldeneysee | Trainerportal",
   description: "Interne Trainingsverwaltung für den Ruderklub am Baldeneysee",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/rk.png",
+    apple: "/rk.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "RK Trainer",
+  },
+  applicationName: "RK Trainer",
   robots: {
     index: false,
     follow: false,
@@ -35,7 +48,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <div className="min-h-screen bg-background text-foreground">
+          <PwaRegister />
+          <PwaInstallBanner />
+          <div className="home-app-background min-h-screen bg-background text-foreground">
             {children}
             <footer className="border-t border-border px-4 py-4 text-center text-sm text-muted-foreground">
               <p>© {year} Ruderklub am Baldeneysee – Intern</p>

@@ -62,3 +62,13 @@ body {
 * {
   border-color: var(--border);
 }
+
+@media (display-mode: standalone) {
+  .home-app-background {
+    background-image: url("/rk.png");
+    background-repeat: no-repeat;
+    background-position: center 4rem;
+    background-size: min(42vw, 220px);
+    background-attachment: fixed;
+  }
+}

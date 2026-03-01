@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Role } from "@prisma/client";
-import { assignmentSchema, athleteSchema, createUserSchema, trainingGroupSchema } from "../lib/validation";
+import { assignmentSchema, athleteSchema, athleteTrainingEntrySchema, createUserSchema, trainingGroupSchema } from "../lib/validation";
 
 describe("validation schemas", () => {
   it("validates createUser input", () => {
@@ -64,6 +64,17 @@ describe("validation schemas", () => {
       name: "Max Beispiel",
       birthDate: "",
       active: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("allows training entry with optional notes", () => {
+    const result = athleteTrainingEntrySchema.safeParse({
+      athleteId: "cm2kz40ls0000rk7hax9y1n2m",
+      trainingDate: "2026-03-01",
+      result: "Intervalltraining 6x500m",
+      notes: "Gute Technik im Endspurt.",
     });
 
     expect(result.success).toBe(true);

@@ -84,6 +84,13 @@ export const athleteTrainingEntrySchema = z.object({
   athleteId: z.string().cuid(),
   trainingDate: z.coerce.date(),
   result: z.string().trim().min(2).max(1000),
+  notes: z.preprocess((value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+    const normalized = value.trim();
+    return normalized.length === 0 ? undefined : normalized;
+  }, z.string().max(2000).optional()),
 });
 
 export const calendarEventSchema = z

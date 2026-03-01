@@ -140,7 +140,7 @@ export default async function GroupDetailPage({
                 <Input id="name" name="name" required />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="birthDate">Geburtsdatum</Label>
+                <Label htmlFor="birthDate">Geburtsdatum (optional)</Label>
                 <Input id="birthDate" name="birthDate" type="date" />
               </div>
               <label className="flex items-center gap-2 text-sm md:col-span-2">
@@ -215,7 +215,6 @@ export default async function GroupDetailPage({
                       type="date"
                       name="birthDate"
                       defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""}
-                      required
                       className="md:col-span-1"
                     />
                     <label className="flex items-center gap-2 text-sm md:col-span-2">
@@ -234,6 +233,7 @@ export default async function GroupDetailPage({
                     <input type="hidden" name="athleteId" value={athlete.id} />
                     <Input type="date" name="trainingDate" required />
                     <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />
+                    <Textarea name="notes" placeholder="Notizen (optional)" className="md:col-span-4" />
                     <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
                       Ergebnis speichern
                     </Button>
@@ -248,6 +248,7 @@ export default async function GroupDetailPage({
                       <p>
                         {entry.trainingDate.toLocaleDateString("de-DE")}: {entry.result}
                       </p>
+                      {entry.notes ? <p className="mt-1 text-xs text-muted-foreground">Notiz: {entry.notes}</p> : null}
                     </div>
                   ))}
                 </div>

@@ -3,6 +3,7 @@
 import { AnnouncementPriority, EventType, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { canManageAnnouncements, canManageAthletes, canManageCalendar, canManageGroups, canManageUsers, canMoveAthletes } from "@/lib/rbac";
 import {
   announcementSchema,
@@ -33,14 +34,23 @@ export async function createUserAction(formData: FormData) {
 
   const parsed = createUserSchema.safeParse({
     username: String(formData.get("username") ?? "").trim().toLowerCase(),
-    displayName: String(formData.get("displayName") ?? ""),
+    displayName: String(formData.get("displayName") ?? "").trim(),
     role: String(formData.get("role") ?? "TRAINER") as Role,
-    password: String(formData.get("password") ?? ""),
+    password: String(formData.get("password") ?? "").trim(),
     active: checkboxValue(formData.get("active")),
   });
 
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { username: parsed.data.username },
+    select: { id: true },
+  });
+
+  if (existing) {
+    throw new Error("Benutzername ist bereits vergeben.");
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
@@ -56,6 +66,7 @@ export async function createUserAction(formData: FormData) {
   });
 
   revalidatePath("/admin/users");
+  redirect("/admin/users");
 }
 
 export async function updateUserAction(formData: FormData) {
@@ -355,6 +366,7 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
     athleteId: String(formData.get("athleteId") ?? ""),
     trainingDate: String(formData.get("trainingDate") ?? ""),
     result: String(formData.get("result") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
   });
 
   if (!parsed.success) {
@@ -373,6 +385,7 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
       athleteId: parsed.data.athleteId,
       trainingDate: parsed.data.trainingDate,
       result: parsed.data.result,
+      notes: parsed.data.notes ?? null,
     },
   });
 
