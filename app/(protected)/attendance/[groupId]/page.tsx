@@ -15,6 +15,13 @@ function toIsoDateOnly(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function formatBirthDate(date: Date | null) {
+  if (!date) {
+    return "Geburtsdatum nicht hinterlegt";
+  }
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "UTC" }).format(date);
+}
+
 export default async function AttendanceDetailPage({
   params,
   searchParams,
@@ -156,7 +163,7 @@ export default async function AttendanceDetailPage({
                         <div>
                           <p className="font-medium">{athlete.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {athlete.birthDate ? athlete.birthDate.toLocaleDateString("de-DE") : "Geburtsdatum nicht hinterlegt"}
+                            {formatBirthDate(athlete.birthDate)}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">

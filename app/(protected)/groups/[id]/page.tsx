@@ -20,6 +20,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+function formatBirthDate(date: Date | null) {
+  if (!date) {
+    return "-";
+  }
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "UTC" }).format(date);
+}
+
+function formatDateInputValue(date: Date | null) {
+  if (!date) {
+    return "";
+  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default async function GroupDetailPage({
   params,
   searchParams,
@@ -213,7 +230,7 @@ export default async function GroupDetailPage({
               <div className="mt-3 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm text-muted-foreground">
-                    Geburtsdatum: {athlete.birthDate ? athlete.birthDate.toLocaleDateString("de-DE") : "-"}
+                    Geburtsdatum: {formatBirthDate(athlete.birthDate)}
                   </p>
                   <span className={`text-xs ${athlete.active ? "text-green-400" : "text-red-400"}`}>{athlete.active ? "Aktiv" : "Inaktiv"}</span>
                 </div>
@@ -226,7 +243,7 @@ export default async function GroupDetailPage({
                     <Input
                       type="date"
                       name="birthDate"
-                      defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""}
+                      defaultValue={formatDateInputValue(athlete.birthDate)}
                       className="md:col-span-1"
                     />
                     <label className="flex items-center gap-2 text-sm md:col-span-2">

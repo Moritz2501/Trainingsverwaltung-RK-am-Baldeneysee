@@ -8,6 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+function formatDateInputValue(date: Date | null) {
+  if (!date) {
+    return "";
+  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default async function AthletesDatabasePage({
   searchParams,
 }: {
@@ -103,7 +113,7 @@ export default async function AthletesDatabasePage({
                     </div>
                     <div className="space-y-1">
                       <Label>Geburtsdatum</Label>
-                      <Input type="date" name="birthDate" defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""} />
+                      <Input type="date" name="birthDate" defaultValue={formatDateInputValue(athlete.birthDate)} />
                     </div>
 
                     <div className="flex items-center gap-2 text-sm">

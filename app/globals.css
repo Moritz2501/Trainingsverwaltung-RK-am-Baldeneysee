@@ -77,6 +77,16 @@ body {
   animation: heartbeat-scale 1.2s ease-in-out infinite;
 }
 
+input[type="date"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 @media (display-mode: standalone) {
   .home-app-background {
     background-image: url("/rk.png");
