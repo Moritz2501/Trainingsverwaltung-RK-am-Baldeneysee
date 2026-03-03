@@ -27,7 +27,7 @@ export default async function CalendarPage() {
             <CardTitle>Neuer Termin (Regatta/Veranstaltung)</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createCalendarEventAction} className="grid gap-3 md:grid-cols-2">
+            <form action={createCalendarEventAction} className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="title">Titel</Label>
                 <Input id="title" name="title" required />
@@ -55,7 +55,9 @@ export default async function CalendarPage() {
                 <Label htmlFor="description">Beschreibung</Label>
                 <Textarea id="description" name="description" required />
               </div>
-              <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Eintrag speichern</Button>
+              <div className="md:col-span-2">
+                <Button className="bg-blue-700 text-white hover:bg-blue-600">Eintrag speichern</Button>
+              </div>
             </form>
           </CardContent>
         </Card>

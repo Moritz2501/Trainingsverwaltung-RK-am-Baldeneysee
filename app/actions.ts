@@ -3,8 +3,13 @@
 import { AnnouncementPriority, EventType, Prisma, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { canManageAnnouncements, canManageAthletes, canManageCalendar, canManageGroups, canManageUsers, canMoveAthletes } from "@/lib/rbac";
 import {
+  athleteBatchCreateSchema,
+  attendanceListCreateSchema,
+  attendanceListFinalizeSchema,
+  attendanceListUpdateSchema,
   attendanceSaveSchema,
   announcementSchema,
   moveAthletesSchema,
@@ -269,7 +274,7 @@ async function canEditGroup(sessionUserId: string, role: Role, groupId: string) 
     throw new Error("Gruppe nicht gefunden");
   }
 
-  if (canManageAthletes(role)) {
+  if (canManageGroups(role)) {
     return group;
   }
 
@@ -365,6 +370,148 @@ export async function saveGroupAttendanceAction(formData: FormData) {
   revalidatePath(`/attendance/${parsed.data.groupId}`);
 }
 
+export async function createAttendanceListAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = attendanceListCreateSchema.safeParse({
+    groupId: String(formData.get("groupId") ?? ""),
+    date: String(formData.get("date") ?? ""),
+    title: String(formData.get("title") ?? ""),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  await canAccessAttendanceGroup(session.user.id, session.user.role, parsed.data.groupId);
+
+  const list = await prisma.attendanceList.create({
+    data: {
+      groupId: parsed.data.groupId,
+      date: parsed.data.date,
+      title: parsed.data.title,
+      createdById: session.user.id,
+    },
+    select: { id: true, groupId: true },
+  });
+
+  revalidatePath("/attendance");
+  revalidatePath(`/attendance/${list.groupId}`);
+  redirect(`/attendance/${list.groupId}?listId=${list.id}`);
+}
+
+export async function updateAttendanceListAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const listId = String(formData.get("listId") ?? "");
+  const athleteIds = formData.getAll("athleteIds").map((value) => String(value));
+  const items = athleteIds.map((athleteId) => ({
+    athleteId,
+    status: String(formData.get(`status-${athleteId}`) ?? "ABWESEND"),
+  }));
+
+  const parsed = attendanceListUpdateSchema.safeParse({
+    listId,
+    items,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const list = await prisma.attendanceList.findUnique({
+    where: { id: parsed.data.listId },
+    include: {
+      group: { include: { assignments: true } },
+    },
+  });
+
+  if (!list) {
+    throw new Error("Anwesenheitsliste nicht gefunden.");
+  }
+
+  if (list.isFinalized) {
+    throw new Error("Diese Anwesenheitsliste ist bereits finalisiert.");
+  }
+
+  const canAccess =
+    canManageGroups(session.user.role) || list.group.assignments.some((entry) => entry.userId === session.user.id);
+  if (!canAccess) {
+    throw new Error("Keine Berechtigung für diese Anwesenheitsliste.");
+  }
+
+  const athleteIdsToSave = parsed.data.items.map((item) => item.athleteId);
+  const existingAthletes = await prisma.athlete.findMany({
+    where: { id: { in: athleteIdsToSave }, groupId: list.groupId },
+    select: { id: true },
+  });
+
+  if (existingAthletes.length !== athleteIdsToSave.length) {
+    throw new Error("Mindestens ein Sportler gehört nicht zur gewählten Gruppe.");
+  }
+
+  await prisma.$transaction(
+    parsed.data.items.map((item) =>
+      prisma.attendanceListItem.upsert({
+        where: {
+          listId_athleteId: {
+            listId: list.id,
+            athleteId: item.athleteId,
+          },
+        },
+        update: {
+          status: item.status,
+        },
+        create: {
+          listId: list.id,
+          athleteId: item.athleteId,
+          status: item.status,
+        },
+      }),
+    ),
+  );
+
+  revalidatePath("/attendance");
+  revalidatePath(`/attendance/${list.groupId}`);
+}
+
+export async function finalizeAttendanceListAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = attendanceListFinalizeSchema.safeParse({
+    listId: String(formData.get("listId") ?? ""),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const list = await prisma.attendanceList.findUnique({
+    where: { id: parsed.data.listId },
+    include: {
+      group: { include: { assignments: true } },
+    },
+  });
+
+  if (!list) {
+    throw new Error("Anwesenheitsliste nicht gefunden.");
+  }
+
+  const canAccess =
+    canManageGroups(session.user.role) || list.group.assignments.some((entry) => entry.userId === session.user.id);
+  if (!canAccess) {
+    throw new Error("Keine Berechtigung für diese Anwesenheitsliste.");
+  }
+
+  await prisma.attendanceList.update({
+    where: { id: list.id },
+    data: { isFinalized: true },
+  });
+
+  revalidatePath("/attendance");
+  revalidatePath(`/attendance/${list.groupId}`);
+}
+
 export async function createAthleteAction(formData: FormData) {
   const session = await requireAuth();
   if (!canManageAthletes(session.user.role)) {
@@ -391,6 +538,54 @@ export async function createAthleteAction(formData: FormData) {
       birthDate: parsed.data.birthDate ?? null,
       active: parsed.data.active,
     },
+  });
+
+  revalidatePath(`/groups/${parsed.data.groupId}`);
+  revalidatePath("/athletes");
+}
+
+export async function createAthletesBatchAction(formData: FormData) {
+  const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const raw = String(formData.get("batchInput") ?? "");
+  const lines = raw.split(/\r?\n/g);
+
+  const parsed = athleteBatchCreateSchema.safeParse({ groupId, lines });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, parsed.data.groupId);
+
+  const athletesToCreate = parsed.data.lines.map((line) => {
+    const [namePart, birthPart] = line.split(";").map((value) => value.trim());
+    if (!namePart) {
+      throw new Error("Jede Zeile benötigt mindestens einen Namen.");
+    }
+
+    let birthDate: Date | null = null;
+    if (birthPart) {
+      const parsedDate = new Date(birthPart);
+      if (Number.isNaN(parsedDate.getTime())) {
+        throw new Error(`Ungültiges Geburtsdatum in Zeile: ${line}`);
+      }
+      birthDate = parsedDate;
+    }
+
+    return {
+      groupId: parsed.data.groupId,
+      name: namePart,
+      birthDate,
+      active: true,
+    };
+  });
+
+  await prisma.athlete.createMany({
+    data: athletesToCreate,
   });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);

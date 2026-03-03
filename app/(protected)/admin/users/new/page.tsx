@@ -36,6 +36,7 @@ export default async function NewUserPage() {
                 <option value="ADMIN">ADMIN</option>
                 <option value="LEITUNG">LEITUNG</option>
                 <option value="TRAINER">TRAINER</option>
+                <option value="GRUPPEN_VERWALTUNG">GRUPPEN-VERWALTUNG</option>
               </select>
             </div>
             <div className="space-y-1">

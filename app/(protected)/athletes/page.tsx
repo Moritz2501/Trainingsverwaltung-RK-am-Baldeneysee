@@ -44,7 +44,7 @@ export default async function AthletesDatabasePage({
           <CardTitle>Sportler anlegen</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAthleteAction} className="grid gap-3 md:grid-cols-2">
+          <form action={createAthleteAction} className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" required />
@@ -77,75 +77,67 @@ export default async function AthletesDatabasePage({
           <CardTitle>Alle Sportler</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="GET" className="flex flex-col gap-2 md:flex-row md:items-end">
-            <div className="w-full space-y-1 md:max-w-md">
+          <form method="GET" className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <div className="space-y-1">
               <Label htmlFor="q">Sportler suchen</Label>
               <Input id="q" name="q" defaultValue={q ?? ""} placeholder="Name eingeben..." />
             </div>
-            <button type="submit" className="h-10 rounded-md border border-border px-4 text-sm hover:bg-accent/40">
+            <Button type="submit" variant="outline">
               Suchen
-            </button>
+            </Button>
           </form>
 
           {filteredAthletes.length === 0 ? <p className="text-sm text-muted-foreground">Keine Sportler gefunden.</p> : null}
 
-          <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-accent/30 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Geburtsdatum</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Trainingsgruppe</th>
-                  <th className="px-3 py-2 font-medium">Aktionen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAthletes.map((athlete) => (
-                  <tr key={athlete.id} className="border-t border-border">
-                    <td className="px-3 py-2" colSpan={5}>
-                      <form action={updateAthleteAction} className="grid gap-2 md:grid-cols-5">
-                        <input type="hidden" name="id" value={athlete.id} />
-                        <input type="hidden" name="groupId" value={athlete.groupId} />
-                        <Input name="name" defaultValue={athlete.name} required />
-                        <Input
-                          type="date"
-                          name="birthDate"
-                          defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""}
-                        />
-                        <div className="flex items-center">
-                          <label className="flex items-center gap-2 text-sm">
-                            <input type="checkbox" name="active" defaultChecked={athlete.active} /> Aktiv
-                          </label>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          {athlete.group.name}
-                          {canMoveBetweenGroups ? <span className="ml-2 text-xs text-blue-300">(Verschiebung über Gruppenansicht)</span> : null}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
-                            Speichern
-                          </Button>
-                        </div>
-                      </form>
+          <div className="space-y-3">
+            {filteredAthletes.map((athlete) => (
+              <Card key={athlete.id}>
+                <CardContent className="space-y-3 pt-6">
+                  <form action={updateAthleteAction} className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <input type="hidden" name="id" value={athlete.id} />
+                    <input type="hidden" name="groupId" value={athlete.groupId} />
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <form action={deleteAthleteAction}>
-                          <input type="hidden" name="id" value={athlete.id} />
-                          <input type="hidden" name="groupId" value={athlete.groupId} />
-                          <Button type="submit" variant="destructive" size="sm">
-                            Löschen
-                          </Button>
-                        </form>
-                        <Link href={`/groups/${athlete.groupId}`} className="text-blue-400 hover:text-blue-300 hover:underline">
-                          Zur Gruppe
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    <div className="space-y-1">
+                      <Label>Name</Label>
+                      <Input name="name" defaultValue={athlete.name} required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Geburtsdatum</Label>
+                      <Input type="date" name="birthDate" defaultValue={athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : ""} />
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" name="active" defaultChecked={athlete.active} /> Aktiv
+                      </label>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Gruppe: {athlete.group.name}
+                      {canMoveBetweenGroups ? <span className="ml-2 text-xs text-blue-300">(Verschiebung in Trainingsgruppen)</span> : null}
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
+                        Speichern
+                      </Button>
+                    </div>
+                  </form>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <form action={deleteAthleteAction}>
+                      <input type="hidden" name="id" value={athlete.id} />
+                      <input type="hidden" name="groupId" value={athlete.groupId} />
+                      <Button type="submit" variant="destructive" size="sm">
+                        Löschen
+                      </Button>
+                    </form>
+                    <Link href={`/groups/${athlete.groupId}`} className="text-sm text-blue-400 hover:text-blue-300 hover:underline">
+                      Zur Gruppe
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>

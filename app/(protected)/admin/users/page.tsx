@@ -47,6 +47,7 @@ export default async function AdminUsersPage() {
                     <option value="ADMIN">ADMIN</option>
                     <option value="LEITUNG">LEITUNG</option>
                     <option value="TRAINER">TRAINER</option>
+                    <option value="GRUPPEN_VERWALTUNG">GRUPPEN-VERWALTUNG</option>
                   </select>
                 </div>
                 <label className="flex items-center gap-2 text-sm">

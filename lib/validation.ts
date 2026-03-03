@@ -104,6 +104,29 @@ export const attendanceSaveSchema = z.object({
   items: z.array(attendanceItemSchema).min(1, "Keine Sportler für Anwesenheit übergeben."),
 });
 
+export const attendanceListCreateSchema = z.object({
+  groupId: z.string().min(1, "Ungültige Gruppen-ID."),
+  date: z.coerce.date(),
+  title: z.string().trim().min(2, "Bitte einen Titel mit mindestens 2 Zeichen eingeben.").max(180),
+});
+
+export const attendanceListUpdateSchema = z.object({
+  listId: z.string().cuid(),
+  items: z.array(attendanceItemSchema).min(1, "Keine Sportler für Anwesenheit übergeben."),
+});
+
+export const attendanceListFinalizeSchema = z.object({
+  listId: z.string().cuid(),
+});
+
+export const athleteBatchCreateSchema = z.object({
+  groupId: z.string().min(1, "Ungültige Gruppen-ID."),
+  lines: z
+    .array(z.string().trim())
+    .transform((entries) => entries.filter((entry) => entry.length > 0))
+    .refine((entries) => entries.length > 0, "Bitte mindestens einen Sportler eintragen."),
+});
+
 export const calendarEventSchema = z
   .object({
     title: z.string().min(2).max(180),

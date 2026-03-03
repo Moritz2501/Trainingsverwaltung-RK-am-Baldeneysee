@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ export default async function DashboardPage() {
   const session = await requireAuth();
 
   const now = new Date();
-  const [announcementCount, groupCount, upcomingEvents, announcements] = await Promise.all([
+  const [announcementCount, groupCount, upcomingEvents, announcements, assignedGroups] = await Promise.all([
     prisma.announcement.count({ where: { archived: false, validTo: { gte: now } } }),
     prisma.trainingGroup.count({ where: { active: true } }),
     prisma.calendarEvent.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 5 }),
@@ -17,6 +18,15 @@ export default async function DashboardPage() {
       where: { archived: false, validFrom: { lte: now }, validTo: { gte: now } },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       take: 6,
+    }),
+    prisma.trainingGroup.findMany({
+      where: {
+        assignments: {
+          some: { userId: session.user.id },
+        },
+      },
+      select: { id: true, name: true, description: true, active: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -47,6 +57,28 @@ export default async function DashboardPage() {
           <CardContent className="text-3xl font-bold">{upcomingEvents.length}</CardContent>
         </Card>
       </div>
+
+      {session.user.role === Role.TRAINER || session.user.role === Role.GRUPPEN_VERWALTUNG ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Meine zugewiesenen Trainingsgruppen</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {assignedGroups.length === 0 ? <p className="text-sm text-muted-foreground">Keine Gruppen zugewiesen.</p> : null}
+            {assignedGroups.map((group) => (
+              <div key={group.id} className="rounded-lg border border-border bg-accent/20 p-3">
+                <p className="font-semibold">{group.name}</p>
+                <p className="line-clamp-2 text-xs text-muted-foreground">{group.description}</p>
+                <Link href={`/groups/${group.id}`}>
+                  <Button variant="outline" size="sm" className="mt-3 w-full hover:bg-blue-700/20">
+                    Gruppe öffnen
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

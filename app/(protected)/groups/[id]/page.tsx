@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import {
   assignTrainerToGroupAction,
   createAthleteAction,
+  createAthletesBatchAction,
   createAthleteTrainingEntryAction,
   deleteAthleteAction,
   moveAthletesAction,
@@ -54,12 +55,15 @@ export default async function GroupDetailPage({
   const assigned = group.assignments.some((entry) => entry.userId === session.user.id);
   const canEdit = canManageGroups(session.user.role) || assigned;
 
-  if (!canEdit && session.user.role === Role.TRAINER) {
+  if (!canEdit) {
     notFound();
   }
 
   const trainers = await prisma.user.findMany({
-    where: { role: Role.TRAINER, active: true },
+    where: {
+      role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG, Role.LEITUNG, Role.ADMIN] },
+      active: true,
+    },
     orderBy: { displayName: "asc" },
   });
 
@@ -87,14 +91,14 @@ export default async function GroupDetailPage({
           <CardTitle>Gruppendaten</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateGroupAction} className="grid gap-3 md:grid-cols-2">
+          <form action={updateGroupAction} className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <input type="hidden" name="id" value={group.id} />
             <div className="space-y-1 md:col-span-1">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" defaultValue={group.name} required />
             </div>
             <div className="space-y-1 md:col-span-2">
-              <Label htmlFor="description">Trainingsinhalte/Notizen</Label>
+                <Label htmlFor="description">Trainingsinhalte/Notizen</Label>
               <Textarea id="description" name="description" defaultValue={group.description} required />
             </div>
             <label className="flex items-center gap-2 text-sm md:col-span-2">
@@ -108,16 +112,16 @@ export default async function GroupDetailPage({
       {canManageGroups(session.user.role) ? (
         <Card>
           <CardHeader>
-            <CardTitle>Trainer zuweisen (Mehrfachauswahl)</CardTitle>
+            <CardTitle>Verantwortliche zuweisen (Mehrfachauswahl)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <form action={assignTrainerToGroupAction} className="space-y-3">
               <input type="hidden" name="groupId" value={group.id} />
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {trainers.map((trainer) => (
                   <label key={trainer.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
                     <input type="checkbox" name="userIds" value={trainer.id} defaultChecked={assignedTrainerIds.has(trainer.id)} />
-                    {trainer.displayName}
+                    <span className="truncate">{trainer.displayName} ({trainer.role})</span>
                   </label>
                 ))}
               </div>
@@ -133,7 +137,7 @@ export default async function GroupDetailPage({
             <CardTitle>Sportler anlegen</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createAthleteAction} className="grid gap-3 md:grid-cols-2">
+            <form action={createAthleteAction} className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <input type="hidden" name="groupId" value={group.id} />
               <div className="space-y-1">
                 <Label htmlFor="name">Name</Label>
@@ -147,6 +151,14 @@ export default async function GroupDetailPage({
                 <input type="checkbox" name="active" defaultChecked /> Aktiv
               </label>
               <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Sportler speichern</Button>
+            </form>
+
+            <form action={createAthletesBatchAction} className="mt-4 space-y-2 rounded-md border border-border p-3">
+              <input type="hidden" name="groupId" value={group.id} />
+              <Label htmlFor="batchInput">Mehrere Sportler auf einmal (eine Zeile pro Sportler)</Label>
+              <p className="text-xs text-muted-foreground">Format: Name oder Name;YYYY-MM-DD (z. B. Max Mustermann;2012-05-08)</p>
+              <Textarea id="batchInput" name="batchInput" className="min-h-28" placeholder={"Anna Beispiel\nMax Muster;2013-01-20"} required />
+              <Button variant="secondary" className="hover:bg-blue-700/20">Mehrere Sportler speichern</Button>
             </form>
           </CardContent>
         </Card>
@@ -171,7 +183,7 @@ export default async function GroupDetailPage({
             <form action={moveAthletesAction} className="rounded-lg border border-border p-3">
               <input type="hidden" name="sourceGroupId" value={group.id} />
               <p className="mb-2 text-sm font-medium">Mehrere Sportler gleichzeitig verschieben</p>
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {filteredAthletes.map((athlete) => (
                   <label key={`move-${athlete.id}`} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
                     <input type="checkbox" name="athleteIds" value={athlete.id} />
@@ -179,8 +191,8 @@ export default async function GroupDetailPage({
                   </label>
                 ))}
               </div>
-              <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center">
-                <select name="targetGroupId" className="h-10 rounded-md border border-border bg-background px-3 text-sm" required>
+              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <select name="targetGroupId" className="h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-sm" required>
                   <option value="">Zielgruppe wählen</option>
                   {moveTargets.map((target) => (
                     <option key={target.id} value={target.id}>
@@ -229,7 +241,7 @@ export default async function GroupDetailPage({
                 ) : null}
 
                 {canEdit ? (
-                  <form action={createAthleteTrainingEntryAction} className="grid gap-2 md:grid-cols-4">
+                  <form action={createAthleteTrainingEntryAction} className="grid grid-cols-1 gap-2 md:grid-cols-4">
                     <input type="hidden" name="athleteId" value={athlete.id} />
                     <Input type="date" name="trainingDate" required />
                     <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />

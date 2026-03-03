@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 type SidebarProps = {
   role: Role;
   pathname: string;
+  assignedGroups: Array<{ id: string; name: string }>;
   className?: string;
 };
 
@@ -18,12 +19,16 @@ const baseItems = [
   { href: "/attendance", label: "Anwesenheit", icon: ClipboardCheck },
   { href: "/athletes", label: "Sportlerdatenbank", icon: Database },
   { href: "/calendar", label: "Kalender", icon: CalendarDays },
-  { href: "/announcements", label: "Ankündigungen", icon: Megaphone },
   { href: "/profile", label: "Profil", icon: UserRound },
 ];
 
-export function AppSidebar({ role, pathname, className }: SidebarProps) {
-  const items = role === Role.ADMIN ? [...baseItems, { href: "/admin/users", label: "Benutzer", icon: Users }] : baseItems;
+export function AppSidebar({ role, pathname, assignedGroups, className }: SidebarProps) {
+  const showAnnouncements = role !== Role.TRAINER;
+  const items = [
+    ...baseItems,
+    ...(showAnnouncements ? [{ href: "/announcements", label: "Ankündigungen", icon: Megaphone }] : []),
+    ...(role === Role.ADMIN ? [{ href: "/admin/users", label: "Benutzer", icon: Users }] : []),
+  ];
 
   return (
     <aside
@@ -59,6 +64,30 @@ export function AppSidebar({ role, pathname, className }: SidebarProps) {
           );
         })}
       </nav>
+
+      {assignedGroups.length > 0 ? (
+        <div className="mt-6 border-t border-blue-800 pt-4">
+          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-blue-200">Meine Gruppen</p>
+          <div className="space-y-1">
+            {assignedGroups.map((group) => {
+              const href = `/groups/${group.id}`;
+              const isActive = pathname === href;
+              return (
+                <Link
+                  key={group.id}
+                  href={href}
+                  className={cn(
+                    "block rounded-md px-3 py-2 text-sm transition hover:bg-blue-700/70",
+                    isActive ? "bg-blue-700 text-white" : "text-blue-100",
+                  )}
+                >
+                  {group.name}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-8 border-t border-blue-800 pt-4">
         <ThemeToggle />

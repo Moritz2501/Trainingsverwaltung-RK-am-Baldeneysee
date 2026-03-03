@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 
 export default async function AttendanceGroupsPage() {
   const session = await requireAuth();
+  const restrictedToAssigned = session.user.role === Role.TRAINER || session.user.role === Role.GRUPPEN_VERWALTUNG;
 
   const groups =
-    session.user.role === Role.TRAINER
+    restrictedToAssigned
       ? await prisma.trainingGroup.findMany({
           where: {
             active: true,
@@ -35,8 +36,8 @@ export default async function AttendanceGroupsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Anwesenheitslisten</h1>
-      {session.user.role === Role.TRAINER ? (
-        <p className="text-sm text-muted-foreground">Hier siehst du nur die Trainingsgruppen, denen du als Trainer zugeordnet bist.</p>
+      {restrictedToAssigned ? (
+        <p className="text-sm text-muted-foreground">Hier siehst du nur die Trainingsgruppen, denen du zugeordnet bist.</p>
       ) : (
         <p className="text-sm text-muted-foreground">Hier siehst du alle aktiven Trainingsgruppen.</p>
       )}
@@ -51,7 +52,7 @@ export default async function AttendanceGroupsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-muted-foreground">Sportler: {group._count.athletes}</p>
-              {session.user.role !== Role.TRAINER ? (
+              {!restrictedToAssigned ? (
                 <p className="text-xs text-muted-foreground">
                   Trainer: {group.assignments.map((entry) => entry.user.displayName).join(", ") || "Nicht zugewiesen"}
                 </p>

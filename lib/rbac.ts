@@ -13,15 +13,15 @@ export function canManageCalendar(role: Role) {
 }
 
 export function canManageAnnouncements(role: Role) {
-  return role === Role.ADMIN || role === Role.LEITUNG;
+  return role === Role.ADMIN || role === Role.LEITUNG || role === Role.GRUPPEN_VERWALTUNG;
 }
 
 export function canManageAthletes(role: Role) {
-  return role === Role.ADMIN || role === Role.LEITUNG || role === Role.TRAINER;
+  return role === Role.ADMIN || role === Role.LEITUNG || role === Role.TRAINER || role === Role.GRUPPEN_VERWALTUNG;
 }
 
 export function canMoveAthletes(role: Role) {
-  return role === Role.LEITUNG;
+  return role === Role.ADMIN || role === Role.LEITUNG;
 }
 
 export function canSeeAllGroups(role: Role) {

@@ -8,14 +8,19 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 
-export function ProtectedShell({ role, children }: { role: Role; children: React.ReactNode }) {
+type AssignedGroup = {
+  id: string;
+  name: string;
+};
+
+export function ProtectedShell({ role, assignedGroups, children }: { role: Role; assignedGroups: AssignedGroup[]; children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="hidden lg:block">
-        <AppSidebar role={role} pathname={pathname} className="fixed left-0 top-0 z-30" />
+        <AppSidebar role={role} pathname={pathname} assignedGroups={assignedGroups} className="fixed left-0 top-0 z-30" />
       </div>
 
       {open ? (
@@ -26,7 +31,7 @@ export function ProtectedShell({ role, children }: { role: Role; children: React
             aria-label="Menü schließen"
             onClick={() => setOpen(false)}
           />
-          <AppSidebar role={role} pathname={pathname} className="fixed left-0 top-0 z-40 lg:hidden" />
+          <AppSidebar role={role} pathname={pathname} assignedGroups={assignedGroups} className="fixed left-0 top-0 z-40 lg:hidden" />
         </>
       ) : null}
 
