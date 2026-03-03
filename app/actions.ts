@@ -34,6 +34,7 @@ import {
 } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
+import { createAuditLog } from "@/lib/audit";
 
 function checkboxValue(value: FormDataEntryValue | null) {
   return value === "on" || value === "true";
@@ -85,6 +86,16 @@ export async function createUserAction(formData: FormData) {
     throw error;
   }
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "USER_CREATE",
+    targetType: "User",
+    targetId: parsed.data.username,
+    message: `Benutzer ${parsed.data.displayName} (${parsed.data.username}) erstellt.`,
+    metadata: { role: parsed.data.role, active: parsed.data.active },
+  });
+
   revalidatePath("/admin/users");
   revalidatePath("/admin/users/new");
 }
@@ -117,6 +128,16 @@ export async function updateUserAction(formData: FormData) {
     },
   });
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "USER_UPDATE",
+    targetType: "User",
+    targetId: parsed.data.id,
+    message: `Benutzer ${parsed.data.username} aktualisiert.`,
+    metadata: { role: parsed.data.role, active: parsed.data.active },
+  });
+
   revalidatePath("/admin/users");
 }
 
@@ -135,7 +156,22 @@ export async function deleteUserAction(formData: FormData) {
     throw new Error("Du kannst deinen eigenen Account nicht löschen.");
   }
 
+  const targetUser = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, username: true, displayName: true },
+  });
+
   await prisma.user.delete({ where: { id } });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "USER_DELETE",
+    targetType: "User",
+    targetId: id,
+    message: `Benutzer ${targetUser?.displayName ?? "Unbekannt"} (${targetUser?.username ?? id}) gelöscht.`,
+  });
+
   revalidatePath("/admin/users");
 }
 
@@ -158,6 +194,15 @@ export async function resetUserPasswordAction(formData: FormData) {
   await prisma.user.update({
     where: { id: parsed.data.id },
     data: { passwordHash },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "USER_PASSWORD_RESET",
+    targetType: "User",
+    targetId: parsed.data.id,
+    message: "Temporäres Passwort zurückgesetzt.",
   });
 
   revalidatePath("/admin/users");

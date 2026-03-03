@@ -24,10 +24,14 @@ const baseItems = [
 
 export function AppSidebar({ role, pathname, assignedGroups, className }: SidebarProps) {
   const showAnnouncements = role !== Role.TRAINER;
+  const adminManagementItems = [
+    { href: "/admin/users", label: "Benutzer", icon: Users },
+    { href: "/admin/audit-log", label: "Audit-Log", icon: ClipboardCheck },
+  ];
   const items = [
     ...baseItems,
     ...(showAnnouncements ? [{ href: "/announcements", label: "Ankündigungen", icon: Megaphone }] : []),
-    ...(role === Role.ADMIN || role === Role.LEITUNG ? [{ href: "/admin/users", label: "Benutzer", icon: Users }] : []),
+    ...(role === Role.LEITUNG ? [{ href: "/admin/users", label: "Benutzer", icon: Users }] : []),
   ];
 
   return (
@@ -64,6 +68,31 @@ export function AppSidebar({ role, pathname, assignedGroups, className }: Sideba
           );
         })}
       </nav>
+
+      {role === Role.ADMIN ? (
+        <div className="mt-6 border-t border-blue-800 pt-4">
+          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-blue-200">Verwaltung</p>
+          <div className="space-y-1">
+            {adminManagementItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 transition hover:bg-blue-700/70",
+                    isActive ? "bg-blue-700 text-white" : "text-blue-100",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {assignedGroups.length > 0 ? (
         <div className="mt-6 border-t border-blue-800 pt-4">

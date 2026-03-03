@@ -153,6 +153,21 @@ model AttendanceListItem {
   @@index([athleteId])
 }
 
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actorRole Role
+  action    String
+  targetType String
+  targetId  String?
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+}
+
 model AttendanceEntry {
   id          String           @id @default(cuid())
   groupId     String
