@@ -93,6 +93,17 @@ export const athleteTrainingEntrySchema = z.object({
   }, z.string().max(2000).optional()),
 });
 
+export const attendanceItemSchema = z.object({
+  athleteId: z.string().cuid(),
+  status: z.enum(["ANWESEND", "ABWESEND"]),
+});
+
+export const attendanceSaveSchema = z.object({
+  groupId: z.string().min(1, "Ungültige Gruppen-ID."),
+  date: z.coerce.date(),
+  items: z.array(attendanceItemSchema).min(1, "Keine Sportler für Anwesenheit übergeben."),
+});
+
 export const calendarEventSchema = z
   .object({
     title: z.string().min(2).max(180),

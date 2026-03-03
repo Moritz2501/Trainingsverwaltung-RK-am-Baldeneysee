@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
-import { CalendarDays, Megaphone, Home, Users, UserRound, Layers, Database } from "lucide-react";
+import { CalendarDays, Megaphone, Home, Users, UserRound, Layers, Database, ClipboardCheck } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -15,6 +15,7 @@ type SidebarProps = {
 const baseItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/groups", label: "Trainingsgruppen", icon: Layers },
+  { href: "/attendance", label: "Anwesenheit", icon: ClipboardCheck },
   { href: "/athletes", label: "Sportlerdatenbank", icon: Database },
   { href: "/calendar", label: "Kalender", icon: CalendarDays },
   { href: "/announcements", label: "Ankündigungen", icon: Megaphone },

@@ -30,6 +30,11 @@ enum AnnouncementPriority {
   HOCH
 }
 
+enum AttendanceStatus {
+  ANWESEND
+  ABWESEND
+}
+
 model User {
   id             String                    @id @default(cuid())
   username       String                    @unique
@@ -43,6 +48,7 @@ model User {
   assignments    TrainingGroupAssignment[]
   createdEvents  CalendarEvent[]           @relation("EventCreator")
   announcements  Announcement[]            @relation("AnnouncementCreator")
+  attendances    AttendanceEntry[]         @relation("AttendanceCreator")
 }
 
 model TrainingGroup {
@@ -54,6 +60,7 @@ model TrainingGroup {
   updatedAt   DateTime                  @updatedAt
   assignments TrainingGroupAssignment[]
   athletes    Athlete[]
+  attendance  AttendanceEntry[]
 }
 
 // n:m ist hier sinnvoll, weil ein Trainer mehrere Gruppen betreuen kann
@@ -107,8 +114,26 @@ model Athlete {
   updatedAt DateTime              @updatedAt
   group     TrainingGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
   entries   AthleteTrainingEntry[]
+  attendance AttendanceEntry[]
 
   @@index([groupId])
+}
+
+model AttendanceEntry {
+  id          String           @id @default(cuid())
+  groupId     String
+  athleteId   String
+  date        DateTime
+  status      AttendanceStatus
+  createdById String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  group       TrainingGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  athlete     Athlete          @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  createdBy   User             @relation("AttendanceCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([athleteId, date])
+  @@index([groupId, date])
 }
 
 model AthleteTrainingEntry {

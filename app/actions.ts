@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { canManageAnnouncements, canManageAthletes, canManageCalendar, canManageGroups, canManageUsers, canMoveAthletes } from "@/lib/rbac";
 import {
+  attendanceSaveSchema,
   announcementSchema,
   moveAthletesSchema,
   athleteSchema,
@@ -280,6 +281,88 @@ async function canEditGroup(sessionUserId: string, role: Role, groupId: string) 
   }
 
   return group;
+}
+
+async function canAccessAttendanceGroup(sessionUserId: string, role: Role, groupId: string) {
+  const group = await prisma.trainingGroup.findUnique({
+    where: { id: groupId },
+    include: { assignments: true },
+  });
+
+  if (!group) {
+    throw new Error("Gruppe nicht gefunden");
+  }
+
+  if (canManageGroups(role)) {
+    return group;
+  }
+
+  const assigned = group.assignments.some((entry) => entry.userId === sessionUserId);
+  if (!assigned) {
+    throw new Error("Keine Berechtigung für diese Trainingsgruppe.");
+  }
+
+  return group;
+}
+
+export async function saveGroupAttendanceAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const rawAthleteIds = formData.getAll("athleteIds").map((value) => String(value));
+  const items = rawAthleteIds.map((athleteId) => ({
+    athleteId,
+    status: String(formData.get(`status-${athleteId}`) ?? "ABWESEND"),
+  }));
+
+  const parsed = attendanceSaveSchema.safeParse({
+    groupId: String(formData.get("groupId") ?? ""),
+    date: String(formData.get("date") ?? ""),
+    items,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  await canAccessAttendanceGroup(session.user.id, session.user.role, parsed.data.groupId);
+
+  const athleteIds = parsed.data.items.map((item) => item.athleteId);
+  const existingAthletes = await prisma.athlete.findMany({
+    where: { id: { in: athleteIds }, groupId: parsed.data.groupId },
+    select: { id: true },
+  });
+
+  if (existingAthletes.length !== athleteIds.length) {
+    throw new Error("Mindestens ein Sportler gehört nicht zur gewählten Gruppe.");
+  }
+
+  await prisma.$transaction(
+    parsed.data.items.map((item) =>
+      prisma.attendanceEntry.upsert({
+        where: {
+          athleteId_date: {
+            athleteId: item.athleteId,
+            date: parsed.data.date,
+          },
+        },
+        update: {
+          status: item.status,
+          groupId: parsed.data.groupId,
+          createdById: session.user.id,
+        },
+        create: {
+          groupId: parsed.data.groupId,
+          athleteId: item.athleteId,
+          date: parsed.data.date,
+          status: item.status,
+          createdById: session.user.id,
+        },
+      }),
+    ),
+  );
+
+  revalidatePath("/attendance");
+  revalidatePath(`/attendance/${parsed.data.groupId}`);
 }
 
 export async function createAthleteAction(formData: FormData) {
