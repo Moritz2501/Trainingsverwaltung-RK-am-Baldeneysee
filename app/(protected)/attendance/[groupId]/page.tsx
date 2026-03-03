@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Role } from "@prisma/client";
-import { createAttendanceListAction, finalizeAttendanceListAction, updateAttendanceListAction } from "@/app/actions";
+import { createAttendanceListAction, deleteAttendanceListAction, finalizeAttendanceListAction, updateAttendanceListAction } from "@/app/actions";
 import { requireAuth } from "@/lib/auth";
+import { canManageFinalizedAttendance } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ export default async function AttendanceDetailPage({
     : group.attendanceLists.find((entry) => toIsoDateOnly(entry.date) === selectedDate && !entry.isFinalized) ?? null;
 
   const statusByAthleteId = new Map(selectedList?.items.map((item) => [item.athleteId, item.status]) ?? []);
+  const canEditFinalized = canManageFinalizedAttendance(session.user.role);
 
   const presentCount = group.athletes.filter((athlete) => (statusByAthleteId.get(athlete.id) ?? "ABWESEND") === "ANWESEND").length;
   const totalCount = group.athletes.length;
@@ -160,11 +162,23 @@ export default async function AttendanceDetailPage({
                         <div className="flex flex-wrap items-center gap-3">
                           <input type="hidden" name="athleteIds" value={athlete.id} />
                           <label className="flex items-center gap-2 text-sm">
-                            <input type="radio" name={`status-${athlete.id}`} value="ANWESEND" defaultChecked={currentStatus === "ANWESEND"} disabled={selectedList.isFinalized} />
+                            <input
+                              type="radio"
+                              name={`status-${athlete.id}`}
+                              value="ANWESEND"
+                              defaultChecked={currentStatus === "ANWESEND"}
+                              disabled={selectedList.isFinalized && !canEditFinalized}
+                            />
                             Anwesend
                           </label>
                           <label className="flex items-center gap-2 text-sm">
-                            <input type="radio" name={`status-${athlete.id}`} value="ABWESEND" defaultChecked={currentStatus === "ABWESEND"} disabled={selectedList.isFinalized} />
+                            <input
+                              type="radio"
+                              name={`status-${athlete.id}`}
+                              value="ABWESEND"
+                              defaultChecked={currentStatus === "ABWESEND"}
+                              disabled={selectedList.isFinalized && !canEditFinalized}
+                            />
                             Abwesend
                           </label>
                         </div>
@@ -173,7 +187,7 @@ export default async function AttendanceDetailPage({
                   })}
                 </div>
 
-                {!selectedList.isFinalized ? (
+                {!selectedList.isFinalized || canEditFinalized ? (
                   <div className="flex flex-wrap gap-2">
                     <Button className="bg-blue-700 text-white hover:bg-blue-600">Liste speichern</Button>
                   </div>
@@ -184,11 +198,24 @@ export default async function AttendanceDetailPage({
             ) : null}
 
             {!selectedList.isFinalized ? (
-              <form action={finalizeAttendanceListAction}>
+              <div className="flex flex-wrap gap-2">
+                <form action={finalizeAttendanceListAction}>
+                  <input type="hidden" name="listId" value={selectedList.id} />
+                  <Button variant="secondary" className="hover:bg-blue-700/20">
+                    Liste finalisieren
+                  </Button>
+                </form>
+                {canEditFinalized ? (
+                  <form action={deleteAttendanceListAction}>
+                    <input type="hidden" name="listId" value={selectedList.id} />
+                    <Button variant="destructive">Anwesenheit löschen</Button>
+                  </form>
+                ) : null}
+              </div>
+            ) : canEditFinalized ? (
+              <form action={deleteAttendanceListAction}>
                 <input type="hidden" name="listId" value={selectedList.id} />
-                <Button variant="secondary" className="hover:bg-blue-700/20">
-                  Liste finalisieren
-                </Button>
+                <Button variant="destructive">Anwesenheit löschen</Button>
               </form>
             ) : null}
           </CardContent>

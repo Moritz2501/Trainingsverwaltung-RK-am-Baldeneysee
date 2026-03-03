@@ -4,7 +4,15 @@ import { AnnouncementPriority, EventType, Prisma, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { canManageAnnouncements, canManageAthletes, canManageCalendar, canManageGroups, canManageUsers, canMoveAthletes } from "@/lib/rbac";
+import {
+  canManageAnnouncements,
+  canManageAthletes,
+  canManageCalendar,
+  canManageFinalizedAttendance,
+  canManageGroups,
+  canManageUsers,
+  canMoveAthletes,
+} from "@/lib/rbac";
 import {
   athleteBatchCreateSchema,
   attendanceListCreateSchema,
@@ -430,7 +438,7 @@ export async function updateAttendanceListAction(formData: FormData) {
     throw new Error("Anwesenheitsliste nicht gefunden.");
   }
 
-  if (list.isFinalized) {
+  if (list.isFinalized && !canManageFinalizedAttendance(session.user.role)) {
     throw new Error("Diese Anwesenheitsliste ist bereits finalisiert.");
   }
 
@@ -507,6 +515,44 @@ export async function finalizeAttendanceListAction(formData: FormData) {
     where: { id: list.id },
     data: { isFinalized: true },
   });
+
+  revalidatePath("/attendance");
+  revalidatePath(`/attendance/${list.groupId}`);
+}
+
+export async function deleteAttendanceListAction(formData: FormData) {
+  const session = await requireAuth();
+
+  const parsed = attendanceListFinalizeSchema.safeParse({
+    listId: String(formData.get("listId") ?? ""),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const list = await prisma.attendanceList.findUnique({
+    where: { id: parsed.data.listId },
+    include: {
+      group: { include: { assignments: true } },
+    },
+  });
+
+  if (!list) {
+    throw new Error("Anwesenheitsliste nicht gefunden.");
+  }
+
+  const canAccess =
+    canManageGroups(session.user.role) || list.group.assignments.some((entry) => entry.userId === session.user.id);
+  if (!canAccess) {
+    throw new Error("Keine Berechtigung für diese Anwesenheitsliste.");
+  }
+
+  if (list.isFinalized && !canManageFinalizedAttendance(session.user.role)) {
+    throw new Error("Finalisierte Listen dürfen nur von Admin, Leitung oder GRUPPEN-VERWALTUNG gelöscht werden.");
+  }
+
+  await prisma.attendanceList.delete({ where: { id: list.id } });
 
   revalidatePath("/attendance");
   revalidatePath(`/attendance/${list.groupId}`);

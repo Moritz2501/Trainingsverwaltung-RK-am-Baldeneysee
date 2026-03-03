@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Role } from "@prisma/client";
-import { canManageAnnouncements, canManageCalendar, canManageGroups, canManageUsers, hasRequiredRole } from "../lib/rbac";
+import { canManageAnnouncements, canManageCalendar, canManageFinalizedAttendance, canManageGroups, canManageUsers, hasRequiredRole } from "../lib/rbac";
 
 describe("RBAC helper", () => {
   it("allows ADMIN for user management", () => {
@@ -26,5 +26,12 @@ describe("RBAC helper", () => {
   it("checks role membership", () => {
     expect(hasRequiredRole(Role.ADMIN, [Role.ADMIN, Role.LEITUNG])).toBe(true);
     expect(hasRequiredRole(Role.TRAINER, [Role.ADMIN, Role.LEITUNG])).toBe(false);
+  });
+
+  it("allows finalized attendance management for admin/leitung/gruppen-verwaltung", () => {
+    expect(canManageFinalizedAttendance(Role.ADMIN)).toBe(true);
+    expect(canManageFinalizedAttendance(Role.LEITUNG)).toBe(true);
+    expect(canManageFinalizedAttendance(Role.GRUPPEN_VERWALTUNG)).toBe(true);
+    expect(canManageFinalizedAttendance(Role.TRAINER)).toBe(false);
   });
 });
