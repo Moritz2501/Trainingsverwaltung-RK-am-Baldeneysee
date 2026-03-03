@@ -60,7 +60,8 @@ export default async function AdminUsersPage() {
                 <p className="text-sm text-muted-foreground">Temporäres Passwort setzen (Benutzer muss danach ändern).</p>
                 <div className="space-y-1">
                   <Label htmlFor={`reset-${user.id}`}>Neues temporäres Passwort</Label>
-                  <Input id={`reset-${user.id}`} name="newPassword" type="text" placeholder="Temp1234!" required />
+                  <Input id={`reset-${user.id}`} name="newPassword" type="text" placeholder="Temp1234!" required minLength={4} />
+                  <p className="text-xs text-muted-foreground">Mindestens 4 Zeichen.</p>
                 </div>
                 <Button variant="secondary" className="hover:bg-blue-700/20">Passwort zurücksetzen</Button>
               </form>

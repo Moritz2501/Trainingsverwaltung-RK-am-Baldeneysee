@@ -1,9 +1,8 @@
 "use server";
 
-import { AnnouncementPriority, EventType, Role } from "@prisma/client";
+import { AnnouncementPriority, EventType, Prisma, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { canManageAnnouncements, canManageAthletes, canManageCalendar, canManageGroups, canManageUsers, canMoveAthletes } from "@/lib/rbac";
 import {
   announcementSchema,
@@ -55,18 +54,25 @@ export async function createUserAction(formData: FormData) {
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
 
-  await prisma.user.create({
-    data: {
-      username: parsed.data.username,
-      displayName: parsed.data.displayName,
-      role: parsed.data.role,
-      passwordHash,
-      active: parsed.data.active,
-    },
-  });
+  try {
+    await prisma.user.create({
+      data: {
+        username: parsed.data.username,
+        displayName: parsed.data.displayName,
+        role: parsed.data.role,
+        passwordHash,
+        active: parsed.data.active,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("Benutzername ist bereits vergeben.");
+    }
+    throw error;
+  }
 
   revalidatePath("/admin/users");
-  redirect("/admin/users");
+  revalidatePath("/admin/users/new");
 }
 
 export async function updateUserAction(formData: FormData) {

@@ -7,7 +7,7 @@ const USERNAME_ERROR_MESSAGE =
 
 export const loginSchema = z.object({
   username: z.string().trim().min(3, "Benutzername ist zu kurz."),
-  password: z.string().min(8, "Passwort ist zu kurz."),
+  password: z.string().min(4, "Passwort ist zu kurz. Mindestens 4 Zeichen erforderlich."),
 });
 
 export const createUserSchema = z.object({
@@ -19,7 +19,7 @@ export const createUserSchema = z.object({
     .regex(USERNAME_PATTERN, USERNAME_ERROR_MESSAGE),
   displayName: z.string().min(2).max(80),
   role: z.nativeEnum(Role),
-  password: z.string().min(8),
+  password: z.string().min(4, "Passwort ist zu kurz. Mindestens 4 Zeichen erforderlich."),
   active: z.boolean().default(true),
 });
 
@@ -38,12 +38,12 @@ export const updateUserSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   id: z.string().cuid(),
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(4, "Passwort ist zu kurz. Mindestens 4 Zeichen erforderlich."),
 });
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(8),
+  currentPassword: z.string().min(1, "Bitte aktuelles Passwort eingeben."),
+  newPassword: z.string().min(4, "Passwort ist zu kurz. Mindestens 4 Zeichen erforderlich."),
 });
 
 export const trainingGroupSchema = z.object({

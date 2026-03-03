@@ -15,6 +15,18 @@ describe("validation schemas", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects createUser password shorter than 4 characters", () => {
+    const result = createUserSchema.safeParse({
+      username: "trainer.min",
+      displayName: "Min Trainer",
+      role: Role.TRAINER,
+      password: "123",
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("allows umlauts, spaces and special characters in username", () => {
     const result = createUserSchema.safeParse({
       username: "jörg müller+team@rk!'",

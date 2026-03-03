@@ -40,7 +40,8 @@ export default async function NewUserPage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="password">Temporäres Passwort</Label>
-              <Input id="password" name="password" type="text" required />
+              <Input id="password" name="password" type="text" required minLength={4} />
+              <p className="text-xs text-muted-foreground">Mindestens 4 Zeichen.</p>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="active" defaultChecked /> Account aktiv

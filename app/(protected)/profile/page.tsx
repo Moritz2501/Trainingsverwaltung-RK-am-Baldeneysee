@@ -42,7 +42,8 @@ export default async function ProfilePage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="newPassword">Neues Passwort</Label>
-              <Input id="newPassword" name="newPassword" type="password" required minLength={8} />
+              <Input id="newPassword" name="newPassword" type="password" required minLength={4} />
+              <p className="text-xs text-muted-foreground">Mindestens 4 Zeichen.</p>
             </div>
             <Button className="bg-blue-700 text-white hover:bg-blue-600">Passwort speichern</Button>
           </form>
