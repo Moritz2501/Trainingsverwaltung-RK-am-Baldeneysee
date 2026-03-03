@@ -81,10 +81,36 @@ input[type="date"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
+}
+
+input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  input[type="date"] {
+    font-size: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  input[type="date"] {
+    padding-right: 2.25rem;
+  }
 }
 
 @media (display-mode: standalone) {
