@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default async function NewUserPage() {
-  await requireRole([Role.ADMIN]);
+  await requireRole([Role.ADMIN, Role.LEITUNG]);
 
   return (
     <div className="max-w-2xl space-y-6">

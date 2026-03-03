@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -65,6 +66,8 @@ export default async function AttendanceDetailPage({
   const selectedList = listId
     ? group.attendanceLists.find((entry) => entry.id === listId) ?? null
     : group.attendanceLists.find((entry) => toIsoDateOnly(entry.date) === selectedDate && !entry.isFinalized) ?? null;
+  const openLists = group.attendanceLists.filter((entry) => !entry.isFinalized);
+  const finalizedLists = group.attendanceLists.filter((entry) => entry.isFinalized);
 
   const statusByAthleteId = new Map(selectedList?.items.map((item) => [item.athleteId, item.status]) ?? []);
   const canEditFinalized = canManageFinalizedAttendance(session.user.role);
@@ -108,24 +111,51 @@ export default async function AttendanceDetailPage({
         </CardHeader>
         <CardContent className="space-y-2">
           {group.attendanceLists.length === 0 ? <p className="text-sm text-muted-foreground">Noch keine Anwesenheitslisten vorhanden.</p> : null}
-          {group.attendanceLists.map((entry) => {
-            const isCurrent = selectedList?.id === entry.id;
-            return (
-              <Link
-                key={entry.id}
-                href={`/attendance/${group.id}?listId=${entry.id}`}
-                className={`block rounded-md border p-3 text-sm ${isCurrent ? "border-blue-500 bg-blue-500/10" : "border-border"}`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium">{entry.title}</p>
-                  <span className={`text-xs ${entry.isFinalized ? "text-green-400" : "text-yellow-400"}`}>
-                    {entry.isFinalized ? "Finalisiert" : "Offen"}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">{entry.date.toLocaleDateString("de-DE")}</p>
-              </Link>
-            );
-          })}
+          {openLists.length > 0 ? (
+            <details className="rounded-md border border-border p-2" open>
+              <summary className="cursor-pointer select-none text-sm font-medium">Offene Listen ({openLists.length})</summary>
+              <div className="mt-2 space-y-2">
+                {openLists.map((entry) => {
+                  const isCurrent = selectedList?.id === entry.id;
+                  return (
+                    <Link
+                      key={entry.id}
+                      href={`/attendance/${group.id}?listId=${entry.id}`}
+                      className={`block rounded-md border p-3 text-sm ${isCurrent ? "border-blue-500 bg-blue-500/10" : "border-border"}`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium">{entry.title}</p>
+                        <span className="text-xs text-yellow-400">Offen</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{entry.date.toLocaleDateString("de-DE")}</p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </details>
+          ) : null}
+
+          {finalizedLists.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Finalisierte Listen ({finalizedLists.length})</p>
+              {finalizedLists.map((entry) => {
+                const isCurrent = selectedList?.id === entry.id;
+                return (
+                  <Link
+                    key={entry.id}
+                    href={`/attendance/${group.id}?listId=${entry.id}`}
+                    className={`block rounded-md border p-3 text-sm ${isCurrent ? "border-blue-500 bg-blue-500/10" : "border-border"}`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium">{entry.title}</p>
+                      <span className="text-xs text-green-400">Finalisiert</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{entry.date.toLocaleDateString("de-DE")}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -215,14 +245,18 @@ export default async function AttendanceDetailPage({
                 {canEditFinalized ? (
                   <form action={deleteAttendanceListAction}>
                     <input type="hidden" name="listId" value={selectedList.id} />
-                    <Button variant="destructive">Anwesenheit löschen</Button>
+                    <ConfirmSubmitButton variant="destructive" confirmMessage="Diese Anwesenheitsliste wirklich komplett löschen?">
+                      Anwesenheit löschen
+                    </ConfirmSubmitButton>
                   </form>
                 ) : null}
               </div>
             ) : canEditFinalized ? (
               <form action={deleteAttendanceListAction}>
                 <input type="hidden" name="listId" value={selectedList.id} />
-                <Button variant="destructive">Anwesenheit löschen</Button>
+                <ConfirmSubmitButton variant="destructive" confirmMessage="Diese Anwesenheitsliste wirklich komplett löschen?">
+                  Anwesenheit löschen
+                </ConfirmSubmitButton>
               </form>
             ) : null}
           </CardContent>

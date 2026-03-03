@@ -27,7 +27,7 @@ export function AppSidebar({ role, pathname, assignedGroups, className }: Sideba
   const items = [
     ...baseItems,
     ...(showAnnouncements ? [{ href: "/announcements", label: "Ankündigungen", icon: Megaphone }] : []),
-    ...(role === Role.ADMIN ? [{ href: "/admin/users", label: "Benutzer", icon: Users }] : []),
+    ...(role === Role.ADMIN || role === Role.LEITUNG ? [{ href: "/admin/users", label: "Benutzer", icon: Users }] : []),
   ];
 
   return (

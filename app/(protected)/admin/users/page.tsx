@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default async function AdminUsersPage() {
-  const session = await requireRole([Role.ADMIN]);
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -75,7 +75,7 @@ export default async function AdminUsersPage() {
                   </Button>
                 </form>
               ) : (
-                <p className="text-xs text-muted-foreground lg:col-span-2">Aktueller Admin kann sich nicht selbst löschen.</p>
+                <p className="text-xs text-muted-foreground lg:col-span-2">Aktueller Benutzer kann sich nicht selbst löschen.</p>
               )}
             </CardContent>
           </Card>

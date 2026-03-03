@@ -5,7 +5,7 @@ import { canManageAnnouncements, canManageCalendar, canManageFinalizedAttendance
 describe("RBAC helper", () => {
   it("allows ADMIN for user management", () => {
     expect(canManageUsers(Role.ADMIN)).toBe(true);
-    expect(canManageUsers(Role.LEITUNG)).toBe(false);
+    expect(canManageUsers(Role.LEITUNG)).toBe(true);
     expect(canManageUsers(Role.TRAINER)).toBe(false);
   });
 

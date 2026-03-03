@@ -6,6 +6,7 @@ import {
   createAthletesBatchAction,
   createAthleteTrainingEntryAction,
   deleteAthleteAction,
+  deleteAthleteTrainingEntryAction,
   moveAthletesAction,
   updateAthleteAction,
   updateGroupAction,
@@ -16,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -274,9 +276,24 @@ export default async function GroupDetailPage({
                   {athlete.entries.length === 0 ? <p className="text-xs text-muted-foreground">Noch keine Einträge.</p> : null}
                   {athlete.entries.map((entry) => (
                     <div key={entry.id} className="rounded-md border border-border bg-accent/20 p-2 text-sm">
-                      <p>
-                        {entry.trainingDate.toLocaleDateString("de-DE")}: {entry.result}
-                      </p>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <p>
+                          {entry.trainingDate.toLocaleDateString("de-DE")}: {entry.result}
+                        </p>
+                        {canEdit ? (
+                          <form action={deleteAthleteTrainingEntryAction}>
+                            <input type="hidden" name="entryId" value={entry.id} />
+                            <ConfirmSubmitButton
+                              variant="destructive"
+                              size="sm"
+                              type="submit"
+                              confirmMessage="Eintrag wirklich löschen?"
+                            >
+                              Eintrag löschen
+                            </ConfirmSubmitButton>
+                          </form>
+                        ) : null}
+                      </div>
                       {entry.notes ? <p className="mt-1 text-xs text-muted-foreground">Notiz: {entry.notes}</p> : null}
                     </div>
                   ))}

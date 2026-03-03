@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 
 export function canManageUsers(role: Role) {
-  return role === Role.ADMIN;
+  return role === Role.ADMIN || role === Role.LEITUNG;
 }
 
 export function canManageGroups(role: Role) {

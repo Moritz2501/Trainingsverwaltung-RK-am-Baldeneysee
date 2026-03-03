@@ -40,7 +40,7 @@ function checkboxValue(value: FormDataEntryValue | null) {
 }
 
 export async function createUserAction(formData: FormData) {
-  const session = await requireRole([Role.ADMIN]);
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
   if (!canManageUsers(session.user.role)) {
     return;
   }
@@ -90,7 +90,7 @@ export async function createUserAction(formData: FormData) {
 }
 
 export async function updateUserAction(formData: FormData) {
-  const session = await requireRole([Role.ADMIN]);
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
   if (!canManageUsers(session.user.role)) {
     return;
   }
@@ -121,7 +121,7 @@ export async function updateUserAction(formData: FormData) {
 }
 
 export async function deleteUserAction(formData: FormData) {
-  const session = await requireRole([Role.ADMIN]);
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
   if (!canManageUsers(session.user.role)) {
     return;
   }
@@ -140,7 +140,7 @@ export async function deleteUserAction(formData: FormData) {
 }
 
 export async function resetUserPasswordAction(formData: FormData) {
-  const session = await requireRole([Role.ADMIN]);
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
   if (!canManageUsers(session.user.role)) {
     return;
   }
@@ -720,6 +720,37 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
   });
 
   revalidatePath(`/groups/${athlete.groupId}`);
+}
+
+export async function deleteAthleteTrainingEntryAction(formData: FormData) {
+  const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
+
+  const entryId = String(formData.get("entryId") ?? "");
+  if (!entryId) {
+    throw new Error("Eintrags-ID fehlt");
+  }
+
+  const entry = await prisma.athleteTrainingEntry.findUnique({
+    where: { id: entryId },
+    include: {
+      athlete: {
+        select: { groupId: true },
+      },
+    },
+  });
+
+  if (!entry) {
+    throw new Error("Trainingseintrag nicht gefunden");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, entry.athlete.groupId);
+
+  await prisma.athleteTrainingEntry.delete({ where: { id: entry.id } });
+
+  revalidatePath(`/groups/${entry.athlete.groupId}`);
 }
 
 export async function moveAthletesAction(formData: FormData) {
