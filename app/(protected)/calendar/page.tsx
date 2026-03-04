@@ -107,29 +107,25 @@ export default async function CalendarPage() {
             <CardTitle>Neuer Termin (Regatta/Veranstaltung)</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createCalendarEventAction} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <form action={createCalendarEventAction} className="grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
               <div className="space-y-1">
                 <Label htmlFor="title">Titel</Label>
                 <Input id="title" name="title" required />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="type">Typ</Label>
-                <select id="type" name="type" className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm">
+                <select id="type" name="type" className="h-10 min-w-0 w-full rounded-md border border-border bg-background px-3 text-sm">
                   <option value="REGATTA">Regatta</option>
                   <option value="VERANSTALTUNG">Veranstaltung</option>
                 </select>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="startDate">Startdatum</Label>
-                <Input id="startDate" name="startDate" type="date" required />
+                <Input id="startDate" name="startDate" type="date" className="w-full" required />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="endDate">Enddatum</Label>
-                <Input id="endDate" name="endDate" type="date" required />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="durationHours">Stundenanzahl</Label>
-                <Input id="durationHours" name="durationHours" type="number" min="0.25" step="0.25" defaultValue="1" required />
+                <Input id="endDate" name="endDate" type="date" className="w-full" required />
               </div>
               <div className="space-y-1 lg:col-span-2">
                 <Label htmlFor="location">Ort</Label>
@@ -141,22 +137,22 @@ export default async function CalendarPage() {
               </div>
               <div className="space-y-2 lg:col-span-2">
                 <Label>Teilnehmende Trainingsgruppen</Label>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {groups.map((group) => (
-                    <label key={group.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                    <label key={group.id} className="flex min-w-0 items-center gap-2 rounded-md border border-border p-2 text-sm">
                       <input type="checkbox" name="groupIds" value={group.id} />
-                      <span className="truncate">{group.name}</span>
+                      <span className="break-words">{group.name}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div className="space-y-2 lg:col-span-2">
                 <Label>Teilnehmende Trainer</Label>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {trainers.map((trainer) => (
-                    <label key={trainer.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                    <label key={trainer.id} className="flex min-w-0 items-center gap-2 rounded-md border border-border p-2 text-sm">
                       <input type="checkbox" name="trainerIds" value={trainer.id} />
-                      <span className="truncate">{trainer.displayName}</span>
+                      <span className="break-words">{trainer.displayName}</span>
                     </label>
                   ))}
                 </div>
@@ -176,9 +172,9 @@ export default async function CalendarPage() {
         <CardContent className="space-y-3">
           {events.length === 0 ? <p className="text-muted-foreground">Keine Termine vorhanden.</p> : null}
           {events.map((event) => (
-            <div key={event.id} className="rounded-lg border border-border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-semibold">{event.title}</h2>
+            <div key={event.id} className="min-w-0 rounded-lg border border-border p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h2 className="min-w-0 break-words font-semibold">{event.title}</h2>
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{event.type}</span>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -191,7 +187,7 @@ export default async function CalendarPage() {
               <p className="text-xs text-muted-foreground">
                 Trainer: {event.trainers.map((trainer) => trainer.displayName).join(", ") || "Keine ausgewählt"}
               </p>
-              <p className="mt-1 text-sm">{event.description}</p>
+              <p className="mt-1 break-words text-sm">{event.description}</p>
               {session.user.role !== Role.TRAINER ? (
                 <form action={deleteCalendarEventAction} className="mt-3">
                   <input type="hidden" name="id" value={event.id} />
@@ -209,12 +205,12 @@ export default async function CalendarPage() {
         <CardHeader>
           <CardTitle>Kalenderansicht</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {events.map((event) => (
-            <div key={`calendar-${event.id}`} className="rounded-lg border border-border bg-accent/20 p-3">
+            <div key={`calendar-${event.id}`} className="min-w-0 rounded-lg border border-border bg-accent/20 p-3">
               <p className="text-xs text-muted-foreground">{event.startDate.toLocaleDateString("de-DE")}</p>
-              <p className="font-semibold">{event.title}</p>
-              <p className="text-sm text-muted-foreground">{event.location}</p>
+              <p className="break-words font-semibold">{event.title}</p>
+              <p className="break-words text-sm text-muted-foreground">{event.location}</p>
               <p className="text-xs text-muted-foreground">{Number(event.durationHours.toString()).toLocaleString("de-DE")} h</p>
             </div>
           ))}
