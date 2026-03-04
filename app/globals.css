@@ -63,6 +63,14 @@ body {
   border-color: var(--border);
 }
 
+button:not(:disabled) {
+  transition: filter 120ms ease;
+}
+
+button:not(:disabled):active {
+  filter: brightness(1.1);
+}
+
 @keyframes heartbeat-scale {
   0%,
   100% {

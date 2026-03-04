@@ -34,7 +34,13 @@ export function EditModal({ triggerLabel, title, children, className }: EditModa
 
             <div className="pt-8">
               <p className="mb-4 text-lg font-semibold">{title}</p>
-              {children}
+              <div
+                onSubmitCapture={() => {
+                  setOpen(false);
+                }}
+              >
+                {children}
+              </div>
             </div>
           </div>
         </div>
