@@ -8,6 +8,7 @@ declare module "next-auth" {
     username: string;
     role: Role;
     active: boolean;
+    forcePasswordChange?: boolean;
   }
 
   interface Session {
@@ -16,6 +17,7 @@ declare module "next-auth" {
       username: string;
       role: Role;
       active: boolean;
+      forcePasswordChange?: boolean;
       name?: string | null;
       email?: string | null;
       image?: string | null;
@@ -29,5 +31,6 @@ declare module "next-auth/jwt" {
     username?: string;
     role?: Role;
     active?: boolean;
+    forcePasswordChange?: boolean;
   }
 }

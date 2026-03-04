@@ -55,6 +55,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error("INVALID_PASSWORD");
         }
 
+        const forcePasswordChange = user.lastLoginAt === null;
+
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
@@ -75,6 +77,7 @@ export const authOptions: NextAuthOptions = {
           username: user.username,
           role: user.role,
           active: user.active,
+          forcePasswordChange,
         };
       },
     }),
@@ -86,6 +89,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.username = user.username;
         token.active = user.active;
+        token.forcePasswordChange = Boolean(user.forcePasswordChange);
       }
       return token;
     },
@@ -95,6 +99,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as Role;
         session.user.username = token.username as string;
         session.user.active = Boolean(token.active);
+        session.user.forcePasswordChange = Boolean(token.forcePasswordChange);
       }
       return session;
     },

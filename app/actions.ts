@@ -201,7 +201,7 @@ export async function resetUserPasswordAction(formData: FormData) {
   const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
   await prisma.user.update({
     where: { id: parsed.data.id },
-    data: { passwordHash },
+    data: { passwordHash, lastLoginAt: null },
   });
 
   await createAuditLog({
@@ -1289,6 +1289,55 @@ export async function changeOwnPasswordAction(formData: FormData) {
   });
 
   revalidatePath("/profile");
+}
+
+export type FirstLoginPasswordState = {
+  success: boolean;
+  error: string | null;
+};
+
+export async function firstLoginChangePasswordAction(
+  _previousState: FirstLoginPasswordState,
+  formData: FormData,
+): Promise<FirstLoginPasswordState> {
+  const session = await requireAuth();
+
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: String(formData.get("currentPassword") ?? ""),
+    newPassword: String(formData.get("newPassword") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingaben" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!user) {
+    return { success: false, error: "Benutzer nicht gefunden" };
+  }
+
+  const valid = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+  if (!valid) {
+    return { success: false, error: "Aktuelles Passwort ist falsch." };
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { passwordHash },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "USER_CHANGE_PASSWORD_FIRST_LOGIN",
+    targetType: "User",
+    targetId: session.user.id,
+    message: "Temporäres Passwort beim ersten Login geändert.",
+  });
+
+  revalidatePath("/profile");
+  return { success: true, error: null };
 }
 
 export async function updateTrainerCompensationAction(formData: FormData) {

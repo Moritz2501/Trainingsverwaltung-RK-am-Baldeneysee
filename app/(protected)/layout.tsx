@@ -17,7 +17,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   });
 
   return (
-    <ProtectedShell role={session.user.role} assignedGroups={assignedGroups}>
+    <ProtectedShell role={session.user.role} assignedGroups={assignedGroups} forcePasswordChange={session.user.forcePasswordChange}>
       {children}
     </ProtectedShell>
   );

@@ -6,6 +6,7 @@ import { Role } from "@prisma/client";
 import { Menu, X } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BrandLogo } from "@/components/brand-logo";
+import { FirstLoginPasswordModal } from "@/components/first-login-password-modal";
 import { Button } from "@/components/ui/button";
 
 type AssignedGroup = {
@@ -13,12 +14,23 @@ type AssignedGroup = {
   name: string;
 };
 
-export function ProtectedShell({ role, assignedGroups, children }: { role: Role; assignedGroups: AssignedGroup[]; children: React.ReactNode }) {
+export function ProtectedShell({
+  role,
+  assignedGroups,
+  forcePasswordChange,
+  children,
+}: {
+  role: Role;
+  assignedGroups: AssignedGroup[];
+  forcePasswordChange?: boolean;
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {forcePasswordChange ? <FirstLoginPasswordModal /> : null}
       <div className="hidden lg:block">
         <AppSidebar role={role} pathname={pathname} assignedGroups={assignedGroups} className="fixed left-0 top-0 z-30" />
       </div>
