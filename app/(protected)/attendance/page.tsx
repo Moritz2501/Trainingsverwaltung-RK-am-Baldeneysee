@@ -44,16 +44,16 @@ export default async function AttendanceGroupsPage() {
 
       {groups.length === 0 ? <p className="text-sm text-muted-foreground">Keine passenden Trainingsgruppen gefunden.</p> : null}
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => (
           <Card key={group.id}>
             <CardHeader>
               <CardTitle>{group.name}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="min-w-0 space-y-3">
               <p className="text-xs text-muted-foreground">Sportler: {group._count.athletes}</p>
               {!restrictedToAssigned ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="break-words text-xs text-muted-foreground">
                   Trainer: {group.assignments.map((entry) => entry.user.displayName).join(", ") || "Nicht zugewiesen"}
                 </p>
               ) : null}

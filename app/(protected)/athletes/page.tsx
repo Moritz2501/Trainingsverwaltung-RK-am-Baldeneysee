@@ -54,18 +54,18 @@ export default async function AthletesDatabasePage({
           <CardTitle>Sportler anlegen</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAthleteAction} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <form action={createAthleteAction} className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
             <div className="space-y-1">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" required />
             </div>
             <div className="space-y-1">
               <Label htmlFor="birthDate">Geburtsdatum (optional)</Label>
-              <Input id="birthDate" name="birthDate" type="date" />
+              <Input id="birthDate" name="birthDate" type="date" className="w-full" />
             </div>
-            <div className="space-y-1 lg:col-span-2">
+            <div className="space-y-1 md:col-span-2">
               <Label htmlFor="groupId">Trainingsgruppe zuweisen</Label>
-              <select id="groupId" name="groupId" className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" required>
+              <select id="groupId" name="groupId" className="h-10 min-w-0 w-full rounded-md border border-border bg-background px-3 text-sm" required>
                 <option value="">Gruppe wählen</option>
                 {groups.map((group) => (
                   <option key={group.id} value={group.id}>
@@ -74,10 +74,10 @@ export default async function AthletesDatabasePage({
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-2 text-sm lg:col-span-2">
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
               <input type="checkbox" name="active" defaultChecked /> Aktiv
             </label>
-            <Button className="bg-blue-700 text-white hover:bg-blue-600 lg:col-span-2">Sportler speichern</Button>
+            <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Sportler speichern</Button>
           </form>
         </CardContent>
       </Card>
@@ -87,7 +87,7 @@ export default async function AthletesDatabasePage({
           <CardTitle>Alle Sportler</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="GET" className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <form method="GET" className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end [&>*]:min-w-0">
             <div className="space-y-1">
               <Label htmlFor="q">Sportler suchen</Label>
               <Input id="q" name="q" defaultValue={q ?? ""} placeholder="Name eingeben..." />
@@ -102,8 +102,8 @@ export default async function AthletesDatabasePage({
           <div className="space-y-3">
             {filteredAthletes.map((athlete) => (
               <Card key={athlete.id}>
-                <CardContent className="space-y-3 pt-6">
-                  <form action={updateAthleteAction} className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                <CardContent className="min-w-0 space-y-3 pt-6">
+                  <form action={updateAthleteAction} className="grid grid-cols-1 gap-2 md:grid-cols-2 [&>*]:min-w-0">
                     <input type="hidden" name="id" value={athlete.id} />
                     <input type="hidden" name="groupId" value={athlete.groupId} />
 
@@ -126,7 +126,7 @@ export default async function AthletesDatabasePage({
                       {canMoveBetweenGroups ? <span className="ml-2 text-xs text-blue-300">(Verschiebung in Trainingsgruppen)</span> : null}
                     </div>
 
-                    <div className="lg:col-span-2">
+                    <div className="md:col-span-2">
                       <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
                         Speichern
                       </Button>

@@ -89,17 +89,17 @@ export default async function AttendanceDetailPage({
           <CardTitle>Neue Anwesenheitsliste starten</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAttendanceListAction} className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <form action={createAttendanceListAction} className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4 [&>*]:min-w-0">
             <input type="hidden" name="groupId" value={group.id} />
             <div className="space-y-1">
               <Label htmlFor="date">Trainingstag</Label>
-              <Input id="date" name="date" type="date" defaultValue={selectedDate} required />
+              <Input id="date" name="date" type="date" className="w-full" defaultValue={selectedDate} required />
             </div>
-            <div className="space-y-1 lg:col-span-2">
+            <div className="space-y-1 md:col-span-2">
               <Label htmlFor="title">Titel</Label>
               <Input id="title" name="title" placeholder="z. B. Wassertraining Dienstag" required />
             </div>
-            <div className="lg:col-span-3">
+            <div className="md:col-span-3">
               <Button className="bg-blue-700 text-white hover:bg-blue-600">Liste erstellen</Button>
             </div>
           </form>
@@ -124,8 +124,8 @@ export default async function AttendanceDetailPage({
                       href={`/attendance/${group.id}?listId=${entry.id}`}
                       className={`block rounded-md border p-3 text-sm ${isCurrent ? "border-blue-500 bg-blue-500/10" : "border-border"}`}
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-medium">{entry.title}</p>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <p className="min-w-0 break-words font-medium">{entry.title}</p>
                         <span className="text-xs text-yellow-400">Offen</span>
                       </div>
                       <p className="text-xs text-muted-foreground">{entry.date.toLocaleDateString("de-DE")}</p>
@@ -147,8 +147,8 @@ export default async function AttendanceDetailPage({
                     href={`/attendance/${group.id}?listId=${entry.id}`}
                     className={`block rounded-md border p-3 text-sm ${isCurrent ? "border-blue-500 bg-blue-500/10" : "border-border"}`}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium">{entry.title}</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <p className="min-w-0 break-words font-medium">{entry.title}</p>
                       <span className="text-xs text-green-400">Finalisiert</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{entry.date.toLocaleDateString("de-DE")}</p>
@@ -192,7 +192,7 @@ export default async function AttendanceDetailPage({
                       {group.athletes.map((athlete) => {
                         const currentStatus = statusByAthleteId.get(athlete.id) ?? "ABWESEND";
                         return (
-                          <div key={athlete.id} className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-[1fr_auto] md:items-center">
+                          <div key={athlete.id} className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-[1fr_auto] md:items-center [&>*]:min-w-0">
                             <div>
                               <p className="font-medium">{athlete.name}</p>
                               <p className="text-xs text-muted-foreground">{formatBirthDate(athlete.birthDate)}</p>

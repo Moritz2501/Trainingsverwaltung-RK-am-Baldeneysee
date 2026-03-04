@@ -110,20 +110,20 @@ export default async function GroupDetailPage({
           <CardTitle>Gruppendaten</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateGroupAction} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <form action={updateGroupAction} className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
             <input type="hidden" name="id" value={group.id} />
-               <div className="space-y-1 lg:col-span-1">
+               <div className="space-y-1 md:col-span-1">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" defaultValue={group.name} required />
             </div>
-               <div className="space-y-1 lg:col-span-2">
+               <div className="space-y-1 md:col-span-2">
                 <Label htmlFor="description">Trainingsinhalte/Notizen</Label>
               <Textarea id="description" name="description" defaultValue={group.description} required />
             </div>
-               <label className="flex items-center gap-2 text-sm lg:col-span-2">
+               <label className="flex items-center gap-2 text-sm md:col-span-2">
               <input type="checkbox" name="active" defaultChecked={group.active} /> Aktiv
             </label>
-               <Button className="bg-blue-700 text-white hover:bg-blue-600 lg:col-span-2">Änderungen speichern</Button>
+               <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Änderungen speichern</Button>
           </form>
         </CardContent>
       </Card>
@@ -136,11 +136,11 @@ export default async function GroupDetailPage({
           <CardContent className="space-y-4">
             <form action={assignTrainerToGroupAction} className="space-y-3">
               <input type="hidden" name="groupId" value={group.id} />
-                 <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2 [&>*]:min-w-0">
                 {trainers.map((trainer) => (
                   <label key={trainer.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
                     <input type="checkbox" name="userIds" value={trainer.id} defaultChecked={assignedTrainerIds.has(trainer.id)} />
-                    <span className="truncate">{trainer.displayName} ({trainer.role})</span>
+                    <span className="break-words">{trainer.displayName} ({trainer.role})</span>
                   </label>
                 ))}
               </div>
@@ -156,7 +156,7 @@ export default async function GroupDetailPage({
             <CardTitle>Sportler anlegen</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createAthleteAction} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <form action={createAthleteAction} className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
               <input type="hidden" name="groupId" value={group.id} />
               <div className="space-y-1">
                 <Label htmlFor="name">Name</Label>
@@ -164,12 +164,12 @@ export default async function GroupDetailPage({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="birthDate">Geburtsdatum (optional)</Label>
-                <Input id="birthDate" name="birthDate" type="date" />
+                <Input id="birthDate" name="birthDate" type="date" className="w-full" />
               </div>
-              <label className="flex items-center gap-2 text-sm lg:col-span-2">
+              <label className="flex items-center gap-2 text-sm md:col-span-2">
                 <input type="checkbox" name="active" defaultChecked /> Aktiv
               </label>
-                 <Button className="bg-blue-700 text-white hover:bg-blue-600 lg:col-span-2">Sportler speichern</Button>
+                 <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Sportler speichern</Button>
             </form>
 
             <form action={createAthletesBatchAction} className="mt-4 space-y-2 rounded-md border border-border p-3">
@@ -188,8 +188,8 @@ export default async function GroupDetailPage({
           <CardTitle>Sportlerverwaltung</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="GET" className="flex flex-col gap-2 lg:flex-row lg:items-end">
-            <div className="w-full space-y-1 lg:max-w-md">
+          <form method="GET" className="flex flex-col gap-2 md:flex-row md:items-end [&>*]:min-w-0">
+            <div className="w-full space-y-1 md:max-w-md">
               <Label htmlFor="q">Sportler suchen</Label>
               <Input id="q" name="q" defaultValue={query} placeholder="Name eingeben..." />
             </div>
@@ -202,7 +202,7 @@ export default async function GroupDetailPage({
             <form action={moveAthletesAction} className="rounded-lg border border-border p-3">
               <input type="hidden" name="sourceGroupId" value={group.id} />
               <p className="mb-2 text-sm font-medium">Mehrere Sportler gleichzeitig verschieben</p>
-                 <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2 [&>*]:min-w-0">
                 {filteredAthletes.map((athlete) => (
                   <label key={`move-${athlete.id}`} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
                     <input type="checkbox" name="athleteIds" value={athlete.id} />
@@ -210,7 +210,7 @@ export default async function GroupDetailPage({
                   </label>
                 ))}
               </div>
-              <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center [&>*]:min-w-0">
                 <select name="targetGroupId" className="h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-sm" required>
                   <option value="">Zielgruppe wählen</option>
                   {moveTargets.map((target) => (
@@ -238,15 +238,15 @@ export default async function GroupDetailPage({
                 </div>
 
                 {canEdit ? (
-                  <form action={updateAthleteAction} className="grid gap-2 lg:grid-cols-2">
+                  <form action={updateAthleteAction} className="grid gap-2 md:grid-cols-2 [&>*]:min-w-0">
                     <input type="hidden" name="id" value={athlete.id} />
                     <input type="hidden" name="groupId" value={group.id} />
-                    <Input name="name" defaultValue={athlete.name} required className="lg:col-span-1" />
+                    <Input name="name" defaultValue={athlete.name} required className="md:col-span-1" />
                     <Input
                       type="date"
                       name="birthDate"
                       defaultValue={formatDateInputValue(athlete.birthDate)}
-                      className="lg:col-span-1"
+                      className="w-full md:col-span-1"
                     />
                     <label className="flex items-center gap-2 text-sm md:col-span-2">
                       <input type="checkbox" name="active" defaultChecked={athlete.active} /> Aktiv
@@ -260,11 +260,11 @@ export default async function GroupDetailPage({
                 ) : null}
 
                 {canEdit ? (
-                  <form action={createAthleteTrainingEntryAction} className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                  <form action={createAthleteTrainingEntryAction} className="grid grid-cols-1 gap-2 md:grid-cols-4 [&>*]:min-w-0">
                     <input type="hidden" name="athleteId" value={athlete.id} />
-                    <Input type="date" name="trainingDate" required />
-                        <Input name="result" placeholder="Trainingsergebnis" required className="lg:col-span-2" />
-                        <Textarea name="notes" placeholder="Notizen (optional)" className="lg:col-span-4" />
+                    <Input type="date" name="trainingDate" className="w-full" required />
+                        <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />
+                        <Textarea name="notes" placeholder="Notizen (optional)" className="md:col-span-4" />
                     <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
                       Ergebnis speichern
                     </Button>
