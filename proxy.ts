@@ -7,9 +7,11 @@ const publicRoutes = ["/login"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isServerActionRequest = request.method === "POST" && request.headers.has("next-action");
+  const isPublicAsset = /\.[a-zA-Z0-9]+$/.test(pathname);
 
   if (
     isServerActionRequest ||
+    isPublicAsset ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/favicon")
