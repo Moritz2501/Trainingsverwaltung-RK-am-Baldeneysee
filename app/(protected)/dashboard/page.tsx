@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { requireAuth } from "@/lib/auth";
@@ -39,8 +39,8 @@ export default async function DashboardPage() {
 
   let compensationSchemaMismatch = false;
   let ownCompensationData: {
-    compensation: { hourlyRate: unknown; totalPaid: unknown; lastPayoutAt: Date | null } | null;
-    participatingEvents: Array<{ endDate: Date; durationHours: unknown }>;
+    compensation: { hourlyRate: Prisma.Decimal; totalPaid: Prisma.Decimal; lastPayoutAt: Date | null } | null;
+    participatingEvents: Array<{ endDate: Date; durationHours: Prisma.Decimal }>;
   } | null = null;
 
   try {
