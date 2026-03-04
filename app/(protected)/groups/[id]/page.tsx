@@ -110,7 +110,7 @@ export default async function GroupDetailPage({
           <CardTitle>Gruppendaten</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateGroupAction} className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
+          <form action={updateGroupAction} className="ipad-stack grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
             <input type="hidden" name="id" value={group.id} />
                <div className="space-y-1 md:col-span-1">
               <Label htmlFor="name">Name</Label>
@@ -156,7 +156,7 @@ export default async function GroupDetailPage({
             <CardTitle>Sportler anlegen</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createAthleteAction} className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
+            <form action={createAthleteAction} className="ipad-stack grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
               <input type="hidden" name="groupId" value={group.id} />
               <div className="space-y-1">
                 <Label htmlFor="name">Name</Label>
@@ -188,7 +188,7 @@ export default async function GroupDetailPage({
           <CardTitle>Sportlerverwaltung</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="GET" className="flex flex-col gap-2 md:flex-row md:items-end [&>*]:min-w-0">
+          <form method="GET" className="ipad-stack flex flex-col gap-2 md:flex-row md:items-end [&>*]:min-w-0">
             <div className="w-full space-y-1 md:max-w-md">
               <Label htmlFor="q">Sportler suchen</Label>
               <Input id="q" name="q" defaultValue={query} placeholder="Name eingeben..." />
@@ -210,7 +210,7 @@ export default async function GroupDetailPage({
                   </label>
                 ))}
               </div>
-              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center [&>*]:min-w-0">
+              <div className="ipad-stack mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center [&>*]:min-w-0">
                 <select name="targetGroupId" className="h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-sm" required>
                   <option value="">Zielgruppe wählen</option>
                   {moveTargets.map((target) => (
@@ -238,7 +238,7 @@ export default async function GroupDetailPage({
                 </div>
 
                 {canEdit ? (
-                  <form action={updateAthleteAction} className="grid gap-2 md:grid-cols-2 [&>*]:min-w-0">
+                  <form action={updateAthleteAction} className="ipad-stack grid gap-2 md:grid-cols-2 [&>*]:min-w-0">
                     <input type="hidden" name="id" value={athlete.id} />
                     <input type="hidden" name="groupId" value={group.id} />
                     <Input name="name" defaultValue={athlete.name} required className="md:col-span-1" />
@@ -260,7 +260,7 @@ export default async function GroupDetailPage({
                 ) : null}
 
                 {canEdit ? (
-                  <form action={createAthleteTrainingEntryAction} className="grid grid-cols-1 gap-2 md:grid-cols-4 [&>*]:min-w-0">
+                  <form action={createAthleteTrainingEntryAction} className="ipad-stack grid grid-cols-1 gap-2 md:grid-cols-4 [&>*]:min-w-0">
                     <input type="hidden" name="athleteId" value={athlete.id} />
                     <Input type="date" name="trainingDate" className="w-full" required />
                         <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />

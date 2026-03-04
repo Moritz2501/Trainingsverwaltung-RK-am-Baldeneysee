@@ -114,6 +114,26 @@ button:not(:disabled):active {
   flex-shrink: 0;
 }
 
+@media (min-width: 768px) and (max-width: 1024px) {
+  .ipad-stack {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .date-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 2.75rem;
+    padding-right: 2.5rem;
+    font-size: 16px;
+  }
+
+  .date-input::-webkit-datetime-edit {
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
 @media (display-mode: standalone) {
   .home-app-background {
     background-image: url("/rk.png");

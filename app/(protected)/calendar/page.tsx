@@ -108,7 +108,7 @@ export default async function CalendarPage() {
             <CardTitle>Neuer Termin (Regatta/Veranstaltung)</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createCalendarEventAction} className="grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
+            <form action={createCalendarEventAction} className="ipad-stack grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
               <div className="space-y-1">
                 <Label htmlFor="title">Titel</Label>
                 <Input id="title" name="title" required />
@@ -191,7 +191,7 @@ export default async function CalendarPage() {
               {session.user.role !== Role.TRAINER ? (
                 <div className="mt-3 space-y-3">
                   <EditModal triggerLabel="Bearbeiten" title="Kalendereintrag bearbeiten">
-                    <form action={updateCalendarEventAction} className="mt-3 grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
+                    <form action={updateCalendarEventAction} className="ipad-stack mt-3 grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
                       <input type="hidden" name="id" value={event.id} />
                       <input type="hidden" name="durationHours" value={event.durationHours.toString()} />
 

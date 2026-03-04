@@ -89,7 +89,7 @@ export default async function AttendanceDetailPage({
           <CardTitle>Neue Anwesenheitsliste starten</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAttendanceListAction} className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4 [&>*]:min-w-0">
+          <form action={createAttendanceListAction} className="ipad-stack grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4 [&>*]:min-w-0">
             <input type="hidden" name="groupId" value={group.id} />
             <div className="space-y-1">
               <Label htmlFor="date">Trainingstag</Label>

@@ -54,7 +54,7 @@ export default async function AthletesDatabasePage({
           <CardTitle>Sportler anlegen</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAthleteAction} className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
+          <form action={createAthleteAction} className="ipad-stack grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
             <div className="space-y-1">
               <Label htmlFor="name">Name</Label>
               <Input id="name" name="name" required />
@@ -87,7 +87,7 @@ export default async function AthletesDatabasePage({
           <CardTitle>Alle Sportler</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="GET" className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end [&>*]:min-w-0">
+          <form method="GET" className="ipad-stack grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end [&>*]:min-w-0">
             <div className="space-y-1">
               <Label htmlFor="q">Sportler suchen</Label>
               <Input id="q" name="q" defaultValue={q ?? ""} placeholder="Name eingeben..." />
@@ -103,7 +103,7 @@ export default async function AthletesDatabasePage({
             {filteredAthletes.map((athlete) => (
               <Card key={athlete.id}>
                 <CardContent className="min-w-0 space-y-3 pt-6">
-                  <form action={updateAthleteAction} className="grid grid-cols-1 gap-2 md:grid-cols-2 [&>*]:min-w-0">
+                  <form action={updateAthleteAction} className="ipad-stack grid grid-cols-1 gap-2 md:grid-cols-2 [&>*]:min-w-0">
                     <input type="hidden" name="id" value={athlete.id} />
                     <input type="hidden" name="groupId" value={athlete.groupId} />
 
