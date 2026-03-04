@@ -79,21 +79,27 @@ body {
 
 input[type="date"] {
   width: 100%;
+  inline-size: 100%;
   max-width: 100%;
+  max-inline-size: 100%;
   min-width: 0;
+  min-inline-size: 0;
   min-height: 2.5rem;
+  line-height: 1.2;
   box-sizing: border-box;
 }
 
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
   min-height: 1.2em;
+  min-width: 0;
+  width: 100%;
 }
 
 input[type="date"]::-webkit-datetime-edit {
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
+  width: 100%;
+  padding: 0;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
@@ -101,11 +107,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin: 0;
 }
 
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+}
+
 @media (max-width: 640px) {
   input[type="date"] {
     font-size: 16px;
-    -webkit-appearance: none;
-    appearance: none;
   }
 }
 
@@ -113,6 +121,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   input[type="date"] {
     padding-right: 2.25rem;
     font-size: 16px;
+    min-height: 2.625rem;
   }
 
   input[type="date"]::-webkit-datetime-edit-fields-wrapper {
