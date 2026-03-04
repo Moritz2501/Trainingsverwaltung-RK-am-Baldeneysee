@@ -1,7 +1,8 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { markTrainerPayoutAction, updateTrainerCompensationAction } from "@/app/actions";
 import { requireAuth } from "@/lib/auth";
 import { computeCompensationSummary, formatEuro } from "@/lib/compensation";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,22 +17,44 @@ export default async function CompensationPage() {
   const session = await requireAuth();
   const canManage = canManageCompensation(session.user.role);
 
-  const ownUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      compensation: {
-        select: { hourlyRate: true, totalPaid: true, lastPayoutAt: true },
+  let schemaMismatch = false;
+  let ownUser: {
+    compensation: { hourlyRate: Prisma.Decimal; totalPaid: Prisma.Decimal; lastPayoutAt: Date | null } | null;
+    participatingEvents: Array<{ endDate: Date; durationHours: Prisma.Decimal }>;
+  } | null = null;
+
+  try {
+    ownUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        compensation: {
+          select: { hourlyRate: true, totalPaid: true, lastPayoutAt: true },
+        },
+        participatingEvents: {
+          select: { endDate: true, durationHours: true },
+        },
       },
-      participatingEvents: {
-        select: { endDate: true, durationHours: true },
-      },
-    },
-  });
+    });
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) {
+      throw error;
+    }
+    schemaMismatch = true;
+  }
 
   const ownSummary = computeCompensationSummary(ownUser?.participatingEvents ?? [], ownUser?.compensation ?? null);
 
-  const trainerRows = canManage
-    ? await prisma.user.findMany({
+  let trainerRows: Array<{
+    id: string;
+    displayName: string;
+    role: Role;
+    compensation: { hourlyRate: Prisma.Decimal; totalPaid: Prisma.Decimal; lastPayoutAt: Date | null } | null;
+    participatingEvents: Array<{ endDate: Date; durationHours: Prisma.Decimal }>;
+  }> = [];
+
+  if (canManage && !schemaMismatch) {
+    try {
+      trainerRows = await prisma.user.findMany({
         where: { role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] }, active: true },
         orderBy: { displayName: "asc" },
         select: {
@@ -45,12 +68,25 @@ export default async function CompensationPage() {
             select: { endDate: true, durationHours: true },
           },
         },
-      })
-    : [];
+      });
+    } catch (error) {
+      if (!isPrismaSchemaMismatchError(error)) {
+        throw error;
+      }
+      schemaMismatch = true;
+      trainerRows = [];
+    }
+  }
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Trainer-Abrechnung (nur Anzeige)</h1>
+
+      {schemaMismatch ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+          Die benötigten Datenbanktabellen/Spalten fehlen noch. Bitte Migration ausführen, danach ist die Abrechnung vollständig nutzbar.
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>

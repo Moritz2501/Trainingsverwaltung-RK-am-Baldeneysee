@@ -35,6 +35,7 @@ import {
   updateUserSchema,
 } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
 import { computeCompensationSummary } from "@/lib/compensation";
@@ -1054,24 +1055,32 @@ export async function createCalendarEventAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  const event = await prisma.calendarEvent.create({
-    data: {
-      title: parsed.data.title,
-      type: parsed.data.type,
-      startDate: parsed.data.startDate,
-      endDate: parsed.data.endDate,
-      durationHours: twoDecimals(parsed.data.durationHours),
-      location: parsed.data.location,
-      description: parsed.data.description,
-      createdById: session.user.id,
-      groups: {
-        connect: parsed.data.groupIds.map((id) => ({ id })),
+  let event;
+  try {
+    event = await prisma.calendarEvent.create({
+      data: {
+        title: parsed.data.title,
+        type: parsed.data.type,
+        startDate: parsed.data.startDate,
+        endDate: parsed.data.endDate,
+        durationHours: twoDecimals(parsed.data.durationHours),
+        location: parsed.data.location,
+        description: parsed.data.description,
+        createdById: session.user.id,
+        groups: {
+          connect: parsed.data.groupIds.map((id) => ({ id })),
+        },
+        trainers: {
+          connect: parsed.data.trainerIds.map((id) => ({ id })),
+        },
       },
-      trainers: {
-        connect: parsed.data.trainerIds.map((id) => ({ id })),
-      },
-    },
-  });
+    });
+  } catch (error) {
+    if (isPrismaSchemaMismatchError(error)) {
+      throw new Error("Datenbank-Migration fehlt: Bitte zuerst Prisma-Migration ausführen.");
+    }
+    throw error;
+  }
 
   await createAuditLog({
     actorId: session.user.id,
@@ -1114,24 +1123,31 @@ export async function updateCalendarEventAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  await prisma.calendarEvent.update({
-    where: { id: eventId },
-    data: {
-      title: parsed.data.title,
-      type: parsed.data.type,
-      startDate: parsed.data.startDate,
-      endDate: parsed.data.endDate,
-      durationHours: twoDecimals(parsed.data.durationHours),
-      location: parsed.data.location,
-      description: parsed.data.description,
-      groups: {
-        set: parsed.data.groupIds.map((id) => ({ id })),
+  try {
+    await prisma.calendarEvent.update({
+      where: { id: eventId },
+      data: {
+        title: parsed.data.title,
+        type: parsed.data.type,
+        startDate: parsed.data.startDate,
+        endDate: parsed.data.endDate,
+        durationHours: twoDecimals(parsed.data.durationHours),
+        location: parsed.data.location,
+        description: parsed.data.description,
+        groups: {
+          set: parsed.data.groupIds.map((id) => ({ id })),
+        },
+        trainers: {
+          set: parsed.data.trainerIds.map((id) => ({ id })),
+        },
       },
-      trainers: {
-        set: parsed.data.trainerIds.map((id) => ({ id })),
-      },
-    },
-  });
+    });
+  } catch (error) {
+    if (isPrismaSchemaMismatchError(error)) {
+      throw new Error("Datenbank-Migration fehlt: Bitte zuerst Prisma-Migration ausführen.");
+    }
+    throw error;
+  }
 
   await createAuditLog({
     actorId: session.user.id,
@@ -1301,14 +1317,21 @@ export async function updateTrainerCompensationAction(formData: FormData) {
   }
 
   const normalizedRate = twoDecimals(parsed.data.hourlyRate);
-  await prisma.trainerCompensation.upsert({
-    where: { userId: parsed.data.userId },
-    update: { hourlyRate: normalizedRate },
-    create: {
-      userId: parsed.data.userId,
-      hourlyRate: normalizedRate,
-    },
-  });
+  try {
+    await prisma.trainerCompensation.upsert({
+      where: { userId: parsed.data.userId },
+      update: { hourlyRate: normalizedRate },
+      create: {
+        userId: parsed.data.userId,
+        hourlyRate: normalizedRate,
+      },
+    });
+  } catch (error) {
+    if (isPrismaSchemaMismatchError(error)) {
+      throw new Error("Datenbank-Migration fehlt: Bitte zuerst Prisma-Migration ausführen.");
+    }
+    throw error;
+  }
 
   await createAuditLog({
     actorId: session.user.id,
@@ -1335,24 +1358,32 @@ export async function markTrainerPayoutAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: parsed.data.userId },
-    select: {
-      id: true,
-      displayName: true,
-      role: true,
-      compensation: {
-        select: {
-          hourlyRate: true,
-          totalPaid: true,
-          lastPayoutAt: true,
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: parsed.data.userId },
+      select: {
+        id: true,
+        displayName: true,
+        role: true,
+        compensation: {
+          select: {
+            hourlyRate: true,
+            totalPaid: true,
+            lastPayoutAt: true,
+          },
+        },
+        participatingEvents: {
+          select: { endDate: true, durationHours: true },
         },
       },
-      participatingEvents: {
-        select: { endDate: true, durationHours: true },
-      },
-    },
-  });
+    });
+  } catch (error) {
+    if (isPrismaSchemaMismatchError(error)) {
+      throw new Error("Datenbank-Migration fehlt: Bitte zuerst Prisma-Migration ausführen.");
+    }
+    throw error;
+  }
 
   if (!user) {
     throw new Error("Trainer nicht gefunden.");
@@ -1365,19 +1396,26 @@ export async function markTrainerPayoutAction(formData: FormData) {
   const summary = computeCompensationSummary(user.participatingEvents, user.compensation);
   const amountToMarkAsPaid = summary.earnedSincePayout;
 
-  await prisma.trainerCompensation.upsert({
-    where: { userId: user.id },
-    update: {
-      totalPaid: twoDecimals(summary.totalPaid + amountToMarkAsPaid),
-      lastPayoutAt: new Date(),
-    },
-    create: {
-      userId: user.id,
-      hourlyRate: summary.hourlyRate,
-      totalPaid: amountToMarkAsPaid,
-      lastPayoutAt: new Date(),
-    },
-  });
+  try {
+    await prisma.trainerCompensation.upsert({
+      where: { userId: user.id },
+      update: {
+        totalPaid: twoDecimals(summary.totalPaid + amountToMarkAsPaid),
+        lastPayoutAt: new Date(),
+      },
+      create: {
+        userId: user.id,
+        hourlyRate: summary.hourlyRate,
+        totalPaid: amountToMarkAsPaid,
+        lastPayoutAt: new Date(),
+      },
+    });
+  } catch (error) {
+    if (isPrismaSchemaMismatchError(error)) {
+      throw new Error("Datenbank-Migration fehlt: Bitte zuerst Prisma-Migration ausführen.");
+    }
+    throw error;
+  }
 
   await createAuditLog({
     actorId: session.user.id,

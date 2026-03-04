@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { requireAuth } from "@/lib/auth";
 import { computeCompensationSummary, formatEuro } from "@/lib/compensation";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +12,15 @@ export default async function DashboardPage() {
   const session = await requireAuth();
 
   const now = new Date();
-  const [announcementCount, groupCount, upcomingEvents, announcements, assignedGroups, ownCompensationData] = await Promise.all([
+  const [announcementCount, groupCount, upcomingEvents, announcements, assignedGroups] = await Promise.all([
     prisma.announcement.count({ where: { archived: false, validFrom: { lte: now } } }),
     prisma.trainingGroup.count({ where: { active: true } }),
-    prisma.calendarEvent.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 5 }),
+    prisma.calendarEvent.findMany({
+      where: { endDate: { gte: now } },
+      orderBy: { startDate: "asc" },
+      take: 5,
+      select: { id: true, title: true, type: true, startDate: true, endDate: true, location: true },
+    }),
     prisma.announcement.findMany({
       where: { archived: false, validFrom: { lte: now } },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
@@ -29,7 +35,16 @@ export default async function DashboardPage() {
       select: { id: true, name: true, description: true, active: true },
       orderBy: { name: "asc" },
     }),
-    prisma.user.findUnique({
+  ]);
+
+  let compensationSchemaMismatch = false;
+  let ownCompensationData: {
+    compensation: { hourlyRate: unknown; totalPaid: unknown; lastPayoutAt: Date | null } | null;
+    participatingEvents: Array<{ endDate: Date; durationHours: unknown }>;
+  } | null = null;
+
+  try {
+    ownCompensationData = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         compensation: {
@@ -39,8 +54,13 @@ export default async function DashboardPage() {
           select: { endDate: true, durationHours: true },
         },
       },
-    }),
-  ]);
+    });
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) {
+      throw error;
+    }
+    compensationSchemaMismatch = true;
+  }
 
   const compensationSummary = computeCompensationSummary(
     ownCompensationData?.participatingEvents ?? [],
@@ -99,6 +119,11 @@ export default async function DashboardPage() {
                   Zur Abrechnung
                 </Button>
               </Link>
+              {compensationSchemaMismatch ? (
+                <p className="text-xs text-amber-700 dark:text-amber-300 lg:col-span-3">
+                  Abrechnung wird nach Datenbank-Migration vollständig angezeigt.
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 

@@ -1,6 +1,7 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { createCalendarEventAction, deleteCalendarEventAction } from "@/app/actions";
 import { requireAuth } from "@/lib/auth";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { canManageCalendar } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
@@ -11,31 +12,94 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default async function CalendarPage() {
   const session = await requireAuth();
-  const [events, groups, trainers] = await Promise.all([
-    prisma.calendarEvent.findMany({
-      include: {
-        groups: { select: { id: true, name: true } },
-        trainers: { select: { id: true, displayName: true } },
-      },
-      orderBy: { startDate: "asc" },
-    }),
-    prisma.trainingGroup.findMany({
-      where: { active: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.user.findMany({
-      where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] } },
-      orderBy: { displayName: "asc" },
-      select: { id: true, displayName: true },
-    }),
-  ]);
+  let schemaMismatch = false;
+  let events: Array<{
+    id: string;
+    title: string;
+    type: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+    description: string;
+    durationHours: Prisma.Decimal;
+    groups: Array<{ id: string; name: string }>;
+    trainers: Array<{ id: string; displayName: string }>;
+  }> = [];
+  let groups: Array<{ id: string; name: string }> = [];
+  let trainers: Array<{ id: string; displayName: string }> = [];
+
+  try {
+    [events, groups, trainers] = await Promise.all([
+      prisma.calendarEvent.findMany({
+        include: {
+          groups: { select: { id: true, name: true } },
+          trainers: { select: { id: true, displayName: true } },
+        },
+        orderBy: { startDate: "asc" },
+      }),
+      prisma.trainingGroup.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.user.findMany({
+        where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] } },
+        orderBy: { displayName: "asc" },
+        select: { id: true, displayName: true },
+      }),
+    ]);
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) {
+      throw error;
+    }
+
+    schemaMismatch = true;
+    const [legacyEvents, legacyGroups, legacyTrainers] = await Promise.all([
+      prisma.calendarEvent.findMany({
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          startDate: true,
+          endDate: true,
+          location: true,
+          description: true,
+        },
+        orderBy: { startDate: "asc" },
+      }),
+      prisma.trainingGroup.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.user.findMany({
+        where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] } },
+        orderBy: { displayName: "asc" },
+        select: { id: true, displayName: true },
+      }),
+    ]);
+
+    events = legacyEvents.map((event) => ({
+      ...event,
+      durationHours: new Prisma.Decimal(1),
+      groups: [],
+      trainers: [],
+    }));
+    groups = legacyGroups;
+    trainers = legacyTrainers;
+  }
 
   const canEdit = canManageCalendar(session.user.role);
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Kalender</h1>
+
+      {schemaMismatch ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+          Die Datenbank ist noch nicht auf dem neuesten Stand. Bitte Migration ausführen, damit Stunden/Teilnehmer vollständig verfügbar sind.
+        </p>
+      ) : null}
 
       {canEdit ? (
         <Card>
