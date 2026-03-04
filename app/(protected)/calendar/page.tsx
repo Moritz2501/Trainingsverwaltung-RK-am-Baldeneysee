@@ -1,5 +1,5 @@
 import { Prisma, Role } from "@prisma/client";
-import { createCalendarEventAction, deleteCalendarEventAction } from "@/app/actions";
+import { createCalendarEventAction, deleteCalendarEventAction, updateCalendarEventAction } from "@/app/actions";
 import { requireAuth } from "@/lib/auth";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { canManageCalendar } from "@/lib/rbac";
@@ -43,7 +43,7 @@ export default async function CalendarPage() {
         select: { id: true, name: true },
       }),
       prisma.user.findMany({
-        where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] } },
+        where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG, Role.LEITUNG] } },
         orderBy: { displayName: "asc" },
         select: { id: true, displayName: true },
       }),
@@ -73,7 +73,7 @@ export default async function CalendarPage() {
         select: { id: true, name: true },
       }),
       prisma.user.findMany({
-        where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] } },
+        where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG, Role.LEITUNG] } },
         orderBy: { displayName: "asc" },
         select: { id: true, displayName: true },
       }),
@@ -189,12 +189,109 @@ export default async function CalendarPage() {
               </p>
               <p className="mt-1 break-words text-sm">{event.description}</p>
               {session.user.role !== Role.TRAINER ? (
-                <form action={deleteCalendarEventAction} className="mt-3">
-                  <input type="hidden" name="id" value={event.id} />
-                  <Button variant="destructive" size="sm">
-                    Löschen
-                  </Button>
-                </form>
+                <div className="mt-3 space-y-3">
+                  <details className="rounded-md border border-border p-3">
+                    <summary className="cursor-pointer text-sm font-medium">Eintrag bearbeiten</summary>
+                    <form action={updateCalendarEventAction} className="mt-3 grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
+                      <input type="hidden" name="id" value={event.id} />
+                      <input type="hidden" name="durationHours" value={event.durationHours.toString()} />
+
+                      <div className="space-y-1">
+                        <Label htmlFor={`title-${event.id}`}>Titel</Label>
+                        <Input id={`title-${event.id}`} name="title" defaultValue={event.title} required />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`type-${event.id}`}>Typ</Label>
+                        <select
+                          id={`type-${event.id}`}
+                          name="type"
+                          defaultValue={event.type}
+                          className="h-10 min-w-0 w-full rounded-md border border-border bg-background px-3 text-sm"
+                        >
+                          <option value="REGATTA">Regatta</option>
+                          <option value="VERANSTALTUNG">Veranstaltung</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`startDate-${event.id}`}>Startdatum</Label>
+                        <Input
+                          id={`startDate-${event.id}`}
+                          name="startDate"
+                          type="date"
+                          defaultValue={event.startDate.toISOString().slice(0, 10)}
+                          className="w-full"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`endDate-${event.id}`}>Enddatum</Label>
+                        <Input
+                          id={`endDate-${event.id}`}
+                          name="endDate"
+                          type="date"
+                          defaultValue={event.endDate.toISOString().slice(0, 10)}
+                          className="w-full"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1 lg:col-span-2">
+                        <Label htmlFor={`location-${event.id}`}>Ort</Label>
+                        <Input id={`location-${event.id}`} name="location" defaultValue={event.location} required />
+                      </div>
+                      <div className="space-y-1 lg:col-span-2">
+                        <Label htmlFor={`description-${event.id}`}>Beschreibung</Label>
+                        <Textarea id={`description-${event.id}`} name="description" defaultValue={event.description} required />
+                      </div>
+
+                      <div className="space-y-2 lg:col-span-2">
+                        <Label>Teilnehmende Trainingsgruppen</Label>
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                          {groups.map((group) => (
+                            <label key={`${event.id}-${group.id}`} className="flex min-w-0 items-center gap-2 rounded-md border border-border p-2 text-sm">
+                              <input
+                                type="checkbox"
+                                name="groupIds"
+                                value={group.id}
+                                defaultChecked={event.groups.some((entry) => entry.id === group.id)}
+                              />
+                              <span className="break-words">{group.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 lg:col-span-2">
+                        <Label>Teilnehmende Trainer</Label>
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                          {trainers.map((trainer) => (
+                            <label key={`${event.id}-${trainer.id}`} className="flex min-w-0 items-center gap-2 rounded-md border border-border p-2 text-sm">
+                              <input
+                                type="checkbox"
+                                name="trainerIds"
+                                value={trainer.id}
+                                defaultChecked={event.trainers.some((entry) => entry.id === trainer.id)}
+                              />
+                              <span className="break-words">{trainer.displayName}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="lg:col-span-2">
+                        <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
+                          Änderungen speichern
+                        </Button>
+                      </div>
+                    </form>
+                  </details>
+
+                  <form action={deleteCalendarEventAction}>
+                    <input type="hidden" name="id" value={event.id} />
+                    <Button variant="destructive" size="sm">
+                      Löschen
+                    </Button>
+                  </form>
+                </div>
               ) : null}
             </div>
           ))}
