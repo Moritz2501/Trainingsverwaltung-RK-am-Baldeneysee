@@ -1,0 +1,3 @@
+-- Diese Migration war im Repository ohne SQL-Datei vorhanden.
+-- Platzhalter-Migration, damit `prisma migrate deploy` konsistent durchlaufen kann.
+-- Die tatsächlichen Schema-Änderungen sind in der nachfolgenden Migration enthalten.
