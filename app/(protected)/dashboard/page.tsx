@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { Prisma, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { requireAuth } from "@/lib/auth";
-import { computeCompensationSummary, formatEuro } from "@/lib/compensation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,36 +35,6 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  let compensationSchemaMismatch = false;
-  let ownCompensationData: {
-    compensation: { hourlyRate: Prisma.Decimal; totalPaid: Prisma.Decimal; lastPayoutAt: Date | null } | null;
-    participatingEvents: Array<{ endDate: Date; durationHours: Prisma.Decimal }>;
-  } | null = null;
-
-  try {
-    ownCompensationData = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        compensation: {
-          select: { hourlyRate: true, totalPaid: true, lastPayoutAt: true },
-        },
-        participatingEvents: {
-          select: { endDate: true, durationHours: true },
-        },
-      },
-    });
-  } catch (error) {
-    if (!isPrismaSchemaMismatchError(error)) {
-      throw error;
-    }
-    compensationSchemaMismatch = true;
-  }
-
-  const compensationSummary = computeCompensationSummary(
-    ownCompensationData?.participatingEvents ?? [],
-    ownCompensationData?.compensation ?? null,
-  );
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -97,36 +65,6 @@ export default async function DashboardPage() {
 
       {session.user.role === Role.TRAINER || session.user.role === Role.GRUPPEN_VERWALTUNG ? (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Mein Verdienst (Anzeige)</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 lg:grid-cols-3">
-              <div className="rounded-md border border-border bg-accent/20 p-3">
-                <p className="text-xs text-muted-foreground">Stundensatz</p>
-                <p className="text-xl font-semibold">{formatEuro(compensationSummary.hourlyRate)}</p>
-              </div>
-              <div className="rounded-md border border-border bg-accent/20 p-3">
-                <p className="text-xs text-muted-foreground">Gesamt verdient</p>
-                <p className="text-xl font-semibold">{formatEuro(compensationSummary.totalEarned)}</p>
-              </div>
-              <div className="rounded-md border border-border bg-accent/20 p-3">
-                <p className="text-xs text-muted-foreground">Seit letzter Auszahlung</p>
-                <p className="text-xl font-semibold">{formatEuro(compensationSummary.earnedSincePayout)}</p>
-              </div>
-              <Link href="/compensation" className="lg:col-span-3">
-                <Button variant="outline" size="sm" className="w-full hover:bg-blue-700/20">
-                  Zur Abrechnung
-                </Button>
-              </Link>
-              {compensationSchemaMismatch ? (
-                <p className="text-xs text-amber-700 dark:text-amber-300 lg:col-span-3">
-                  Abrechnung wird nach Datenbank-Migration vollständig angezeigt.
-                </p>
-              ) : null}
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Meine zugewiesenen Trainingsgruppen</CardTitle>

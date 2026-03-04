@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
-import { CalendarDays, Megaphone, Home, Users, UserRound, Layers, Database, ClipboardCheck, Wallet } from "lucide-react";
+import { CalendarDays, Megaphone, Home, Users, UserRound, Layers, Database, ClipboardCheck } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -19,7 +19,6 @@ const baseItems = [
   { href: "/attendance", label: "Anwesenheit", icon: ClipboardCheck },
   { href: "/athletes", label: "Sportlerdatenbank", icon: Database },
   { href: "/calendar", label: "Kalender", icon: CalendarDays },
-  { href: "/compensation", label: "Abrechnung", icon: Wallet },
   { href: "/profile", label: "Profil", icon: UserRound },
 ];
 
