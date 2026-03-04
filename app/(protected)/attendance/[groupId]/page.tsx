@@ -9,6 +9,7 @@ import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EditModal } from "@/components/ui/edit-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -183,55 +184,55 @@ export default async function AttendanceDetailPage({
             {group.athletes.length === 0 ? <p className="text-sm text-muted-foreground">Keine aktiven Sportler in dieser Gruppe.</p> : null}
 
             {group.athletes.length > 0 ? (
-              <form action={updateAttendanceListAction} className="space-y-3">
-                <input type="hidden" name="listId" value={selectedList.id} />
-                <div className="space-y-2">
-                  {group.athletes.map((athlete) => {
-                    const currentStatus = statusByAthleteId.get(athlete.id) ?? "ABWESEND";
-                    return (
-                      <div key={athlete.id} className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-[1fr_auto] md:items-center">
-                        <div>
-                          <p className="font-medium">{athlete.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatBirthDate(athlete.birthDate)}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <input type="hidden" name="athleteIds" value={athlete.id} />
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="radio"
-                              name={`status-${athlete.id}`}
-                              value="ANWESEND"
-                              defaultChecked={currentStatus === "ANWESEND"}
-                              disabled={selectedList.isFinalized && !canEditFinalized}
-                            />
-                            Anwesend
-                          </label>
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="radio"
-                              name={`status-${athlete.id}`}
-                              value="ABWESEND"
-                              defaultChecked={currentStatus === "ABWESEND"}
-                              disabled={selectedList.isFinalized && !canEditFinalized}
-                            />
-                            Abwesend
-                          </label>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              !selectedList.isFinalized || canEditFinalized ? (
+                <EditModal triggerLabel="Bearbeiten" title="Anwesenheitsliste bearbeiten">
+                  <form action={updateAttendanceListAction} className="space-y-3">
+                    <input type="hidden" name="listId" value={selectedList.id} />
+                    <div className="space-y-2">
+                      {group.athletes.map((athlete) => {
+                        const currentStatus = statusByAthleteId.get(athlete.id) ?? "ABWESEND";
+                        return (
+                          <div key={athlete.id} className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-[1fr_auto] md:items-center">
+                            <div>
+                              <p className="font-medium">{athlete.name}</p>
+                              <p className="text-xs text-muted-foreground">{formatBirthDate(athlete.birthDate)}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <input type="hidden" name="athleteIds" value={athlete.id} />
+                              <label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="radio"
+                                  name={`status-${athlete.id}`}
+                                  value="ANWESEND"
+                                  defaultChecked={currentStatus === "ANWESEND"}
+                                  disabled={selectedList.isFinalized && !canEditFinalized}
+                                />
+                                Anwesend
+                              </label>
+                              <label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="radio"
+                                  name={`status-${athlete.id}`}
+                                  value="ABWESEND"
+                                  defaultChecked={currentStatus === "ABWESEND"}
+                                  disabled={selectedList.isFinalized && !canEditFinalized}
+                                />
+                                Abwesend
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
-                {!selectedList.isFinalized || canEditFinalized ? (
-                  <div className="flex flex-wrap gap-2">
-                    <Button className="bg-blue-700 text-white hover:bg-blue-600">Liste speichern</Button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Diese Liste ist finalisiert und kann nicht mehr bearbeitet werden.</p>
-                )}
-              </form>
+                    <div className="flex flex-wrap gap-2">
+                      <Button className="bg-blue-700 text-white hover:bg-blue-600">Liste speichern</Button>
+                    </div>
+                  </form>
+                </EditModal>
+              ) : (
+                <p className="text-sm text-muted-foreground">Diese Liste ist finalisiert und kann nicht mehr bearbeitet werden.</p>
+              )
             ) : null}
 
             {!selectedList.isFinalized ? (

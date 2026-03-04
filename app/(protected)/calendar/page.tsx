@@ -6,6 +6,7 @@ import { canManageCalendar } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EditModal } from "@/components/ui/edit-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,8 +191,7 @@ export default async function CalendarPage() {
               <p className="mt-1 break-words text-sm">{event.description}</p>
               {session.user.role !== Role.TRAINER ? (
                 <div className="mt-3 space-y-3">
-                  <details className="rounded-md border border-border p-3">
-                    <summary className="cursor-pointer text-sm font-medium">Eintrag bearbeiten</summary>
+                  <EditModal triggerLabel="Bearbeiten" title="Kalendereintrag bearbeiten">
                     <form action={updateCalendarEventAction} className="mt-3 grid grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 [&>*]:min-w-0">
                       <input type="hidden" name="id" value={event.id} />
                       <input type="hidden" name="durationHours" value={event.durationHours.toString()} />
@@ -283,7 +283,7 @@ export default async function CalendarPage() {
                         </Button>
                       </div>
                     </form>
-                  </details>
+                  </EditModal>
 
                   <form action={deleteCalendarEventAction}>
                     <input type="hidden" name="id" value={event.id} />
