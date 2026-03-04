@@ -127,12 +127,15 @@ NEXT_PUBLIC_BRAND_LOGO_PATH="/mein-logo.png"
    - `NEXTAUTH_URL` (z. B. `https://deine-domain.vercel.app`)
    - `NEXTAUTH_SECRET`
 3. Build Command: `npm run build`
-4. Optional nach erstem Deploy im Projekt-Terminal ausführen:
+4. Migrationen **nicht** im Build ausführen (verhindert Advisory-Lock/Timeout-Probleme bei Managed Postgres).
+5. Stattdessen Migrationen separat ausführen (lokal oder CI-Job):
 
 ```bash
-npm run prisma:migrate
+npm run prisma:migrate:deploy
 npm run prisma:seed
 ```
+
+Hinweis für Neon/Supabase: Wenn ihr Pooling-URLs nutzt, kann `migrate deploy` an Locks/Timeouts scheitern. Dann Migrationen über eine direkte DB-URL (ohne Pooler) laufen lassen.
 
 ## Projektstruktur (Auszug)
 
