@@ -7,6 +7,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+function mapLoginError(error: string | undefined) {
+  if (!error) {
+    return "Login fehlgeschlagen.";
+  }
+
+  if (error.includes("INVALID_PASSWORD") || error.includes("INVALID_USERNAME")) {
+    return "Benutzername oder Passwort falsch.";
+  }
+
+  if (error.includes("ACCOUNT_INACTIVE")) {
+    return "Benutzerkonto ist deaktiviert.";
+  }
+
+  if (error.includes("RATE_LIMITED")) {
+    return "Zu viele Login-Versuche. Bitte warte kurz.";
+  }
+
+  if (error.includes("CredentialsSignin") || error.includes("LOGIN_FAILED")) {
+    return "Login fehlgeschlagen.";
+  }
+
+  return "Login fehlgeschlagen.";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +54,12 @@ export function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError(result.error);
+      setError(mapLoginError(result.error));
+      return;
+    }
+
+    if (!result?.ok) {
+      setError("Login fehlgeschlagen.");
       return;
     }
 

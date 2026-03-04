@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials, req) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
-          return null;
+          throw new Error("LOGIN_FAILED");
         }
 
         const username = parsed.data.username.trim().toLowerCase();
@@ -35,20 +35,24 @@ export const authOptions: NextAuthOptions = {
         const key = `${username}:${ip}`;
 
         if (isRateLimited(key)) {
-          throw new Error("Zu viele Login-Versuche. Bitte warte kurz.");
+          throw new Error("RATE_LIMITED");
         }
 
         const user = await prisma.user.findUnique({
           where: { username },
         });
 
-        if (!user || !user.active) {
-          return null;
+        if (!user) {
+          throw new Error("INVALID_USERNAME");
+        }
+
+        if (!user.active) {
+          throw new Error("ACCOUNT_INACTIVE");
         }
 
         const validPassword = await bcrypt.compare(password, user.passwordHash);
         if (!validPassword) {
-          return null;
+          throw new Error("INVALID_PASSWORD");
         }
 
         await prisma.user.update({
