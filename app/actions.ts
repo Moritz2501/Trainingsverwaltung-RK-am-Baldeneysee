@@ -931,7 +931,6 @@ export async function createAnnouncementAction(formData: FormData) {
     body: String(formData.get("body") ?? ""),
     priority: String(formData.get("priority") ?? AnnouncementPriority.MITTEL) as AnnouncementPriority,
     validFrom: String(formData.get("validFrom") ?? ""),
-    validTo: String(formData.get("validTo") ?? ""),
   });
 
   if (!parsed.success) {

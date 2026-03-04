@@ -147,9 +147,4 @@ export const announcementSchema = z
     body: z.string().min(2).max(3000),
     priority: z.nativeEnum(AnnouncementPriority),
     validFrom: z.coerce.date(),
-    validTo: z.coerce.date(),
-  })
-  .refine((data) => data.validTo >= data.validFrom, {
-    message: "Gültig-bis muss nach Gültig-von liegen.",
-    path: ["validTo"],
   });

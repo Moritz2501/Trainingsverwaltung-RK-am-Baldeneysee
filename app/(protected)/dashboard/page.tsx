@@ -11,11 +11,11 @@ export default async function DashboardPage() {
 
   const now = new Date();
   const [announcementCount, groupCount, upcomingEvents, announcements, assignedGroups] = await Promise.all([
-    prisma.announcement.count({ where: { archived: false, validTo: { gte: now } } }),
+    prisma.announcement.count({ where: { archived: false, validFrom: { lte: now } } }),
     prisma.trainingGroup.count({ where: { active: true } }),
     prisma.calendarEvent.findMany({ where: { endDate: { gte: now } }, orderBy: { startDate: "asc" }, take: 5 }),
     prisma.announcement.findMany({
-      where: { archived: false, validFrom: { lte: now }, validTo: { gte: now } },
+      where: { archived: false, validFrom: { lte: now } },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       take: 6,
     }),
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
               </div>
               <p className="text-sm text-muted-foreground">{item.body}</p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Gültig: {item.validFrom.toLocaleDateString("de-DE")} – {item.validTo.toLocaleDateString("de-DE")}
+                Gültig ab: {item.validFrom.toLocaleDateString("de-DE")}
               </p>
             </div>
           ))}

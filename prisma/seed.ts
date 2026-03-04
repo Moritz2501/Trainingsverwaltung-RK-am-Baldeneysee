@@ -77,7 +77,6 @@ async function main() {
         body: "Bitte das initiale Admin-Passwort nach dem ersten Login sofort ändern.",
         priority: AnnouncementPriority.HOCH,
         validFrom: new Date(),
-        validTo: new Date(new Date().setMonth(new Date().getMonth() + 2)),
         createdById: admin.id,
         archived: false,
       },

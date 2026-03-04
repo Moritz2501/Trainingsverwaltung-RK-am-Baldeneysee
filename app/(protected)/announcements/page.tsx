@@ -49,10 +49,6 @@ export default async function AnnouncementsPage() {
                 <Label htmlFor="validFrom">Gültig von</Label>
                 <Input id="validFrom" name="validFrom" type="date" required />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="validTo">Gültig bis</Label>
-                <Input id="validTo" name="validTo" type="date" required />
-              </div>
               <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Ankündigung speichern</Button>
             </form>
           </CardContent>
@@ -72,7 +68,7 @@ export default async function AnnouncementsPage() {
             <CardContent>
               <p>{item.body}</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Gültig: {item.validFrom.toLocaleDateString("de-DE")} – {item.validTo.toLocaleDateString("de-DE")}
+                Gültig ab: {item.validFrom.toLocaleDateString("de-DE")}
               </p>
               {canEdit && !item.archived ? (
                 <form action={archiveAnnouncementAction} className="mt-3">

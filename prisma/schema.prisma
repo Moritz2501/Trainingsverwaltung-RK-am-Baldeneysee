@@ -99,7 +99,6 @@ model Announcement {
   body        String
   priority    AnnouncementPriority
   validFrom   DateTime
-  validTo     DateTime
   createdById String
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
