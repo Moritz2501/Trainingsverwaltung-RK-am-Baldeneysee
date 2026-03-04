@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { isPrismaConnectionError } from "@/lib/prisma-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,30 +11,44 @@ export default async function DashboardPage() {
   const session = await requireAuth();
 
   const now = new Date();
-  const [announcementCount, groupCount, upcomingEvents, announcements, assignedGroups] = await Promise.all([
-    prisma.announcement.count({ where: { archived: false, validFrom: { lte: now } } }),
-    prisma.trainingGroup.count({ where: { active: true } }),
-    prisma.calendarEvent.findMany({
-      where: { endDate: { gte: now } },
-      orderBy: { startDate: "asc" },
-      take: 5,
-      select: { id: true, title: true, type: true, startDate: true, endDate: true, location: true },
-    }),
-    prisma.announcement.findMany({
-      where: { archived: false, validFrom: { lte: now } },
-      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-      take: 6,
-    }),
-    prisma.trainingGroup.findMany({
-      where: {
-        assignments: {
-          some: { userId: session.user.id },
+  let dbUnavailable = false;
+  let announcementCount = 0;
+  let groupCount = 0;
+  let upcomingEvents: Array<{ id: string; title: string; type: string; startDate: Date; endDate: Date; location: string }> = [];
+  let announcements: Array<{ id: string; title: string; body: string; priority: string; validFrom: Date }> = [];
+  let assignedGroups: Array<{ id: string; name: string; description: string; active: boolean }> = [];
+
+  try {
+    [announcementCount, groupCount, upcomingEvents, announcements, assignedGroups] = await Promise.all([
+      prisma.announcement.count({ where: { archived: false, validFrom: { lte: now } } }),
+      prisma.trainingGroup.count({ where: { active: true } }),
+      prisma.calendarEvent.findMany({
+        where: { endDate: { gte: now } },
+        orderBy: { startDate: "asc" },
+        take: 5,
+        select: { id: true, title: true, type: true, startDate: true, endDate: true, location: true },
+      }),
+      prisma.announcement.findMany({
+        where: { archived: false, validFrom: { lte: now } },
+        orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+        take: 6,
+      }),
+      prisma.trainingGroup.findMany({
+        where: {
+          assignments: {
+            some: { userId: session.user.id },
+          },
         },
-      },
-      select: { id: true, name: true, description: true, active: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+        select: { id: true, name: true, description: true, active: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+  } catch (error) {
+    if (!isPrismaConnectionError(error)) {
+      throw error;
+    }
+    dbUnavailable = true;
+  }
 
   return (
     <div className="space-y-6">
@@ -41,6 +56,12 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-sm font-medium text-muted-foreground">Herzlich Willkommen, {session.user.name ?? session.user.username}</p>
       </div>
+
+      {dbUnavailable ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+          Datenbank aktuell nicht erreichbar. Inhalte werden angezeigt, sobald die Verbindung wieder verfügbar ist.
+        </p>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
