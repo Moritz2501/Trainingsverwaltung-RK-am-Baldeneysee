@@ -181,7 +181,6 @@ export default async function CalendarPage() {
               <p className="text-sm text-muted-foreground">
                 {event.startDate.toLocaleDateString("de-DE")} – {event.endDate.toLocaleDateString("de-DE")} | {event.location}
               </p>
-              <p className="text-sm text-muted-foreground">Dauer: {Number(event.durationHours.toString()).toLocaleString("de-DE")} Stunden</p>
               <p className="text-xs text-muted-foreground">
                 Gruppen: {event.groups.map((group) => group.name).join(", ") || "Keine ausgewählt"}
               </p>
@@ -308,7 +307,6 @@ export default async function CalendarPage() {
               <p className="text-xs text-muted-foreground">{event.startDate.toLocaleDateString("de-DE")}</p>
               <p className="break-words font-semibold">{event.title}</p>
               <p className="break-words text-sm text-muted-foreground">{event.location}</p>
-              <p className="text-xs text-muted-foreground">{Number(event.durationHours.toString()).toLocaleString("de-DE")} h</p>
             </div>
           ))}
           {events.length === 0 ? <p className="text-sm text-muted-foreground">Keine Einträge für die Kalenderansicht.</p> : null}

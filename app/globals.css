@@ -85,57 +85,33 @@ button:not(:disabled):active {
   animation: heartbeat-scale 1.2s ease-in-out infinite;
 }
 
-input[type="date"] {
+.date-input {
   width: 100%;
-  inline-size: 100%;
   max-width: 100%;
-  max-inline-size: 100%;
   min-width: 0;
-  min-inline-size: 0;
-  min-height: 2.5rem;
+  min-height: 2.625rem;
+  font-size: 16px;
   line-height: 1.2;
   box-sizing: border-box;
+  padding-right: 2.25rem;
 }
 
-input[type="date"]::-webkit-date-and-time-value {
+.date-input::-webkit-date-and-time-value {
   text-align: left;
-  min-height: 1.2em;
-  min-width: 0;
-  width: 100%;
 }
 
-input[type="date"]::-webkit-datetime-edit {
+.date-input::-webkit-datetime-edit {
   min-width: 0;
-  width: 100%;
-  padding: 0;
+  display: block;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  flex-shrink: 0;
+.date-input::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
   margin: 0;
-}
-
-input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-  min-width: 0;
-}
-
-@media (max-width: 640px) {
-  input[type="date"] {
-    font-size: 16px;
-  }
-}
-
-@supports (-webkit-touch-callout: none) {
-  input[type="date"] {
-    padding-right: 2.25rem;
-    font-size: 16px;
-    min-height: 2.625rem;
-  }
-
-  input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-    display: flex;
-    align-items: center;
-  }
+  flex-shrink: 0;
 }
 
 @media (display-mode: standalone) {
