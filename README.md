@@ -40,6 +40,13 @@ Interne Web-App zur Verwaltung von Rudertraining für den **Ruderklub am Baldene
   - Nur zugewiesene Trainingsgruppen sehen und bearbeiten (Trainingsinhalte/Notizen über Gruppenbeschreibung)
   - Kalender lesen (read-only)
   - Ankündigungen lesen
+  - Eigene Verdienstanzeige sehen (nur Anzeige, keine Zahlungsabwicklung)
+
+Zusätzlich gibt es den Bereich **Abrechnung**:
+
+- `ADMIN` und `LEITUNG` können Stundensätze für Trainer setzen und eine Auszahlung als erledigt markieren.
+- Trainer sehen Gesamtverdienst und Verdienst seit letzter Auszahlung.
+- Es werden **keine Zahlungen** über das Tool abgewickelt.
 
 Keine öffentliche Registrierung, Sportler-Registrierung ist nicht vorgesehen.
 
@@ -59,7 +66,7 @@ npm install
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rk_baldeneysee"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="bitte-starken-secret-setzen"
-NEXT_PUBLIC_BRAND_LOGO_PATH="/rk-baldeneysee-logo.svg"
+NEXT_PUBLIC_BRAND_LOGO_PATH="/rk.png"
 ```
 
 ### 3) Prisma Migration + Client

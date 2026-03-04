@@ -88,17 +88,17 @@ export default async function AttendanceDetailPage({
           <CardTitle>Neue Anwesenheitsliste starten</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAttendanceListAction} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <form action={createAttendanceListAction} className="grid grid-cols-1 gap-3 lg:grid-cols-3">
             <input type="hidden" name="groupId" value={group.id} />
             <div className="space-y-1">
               <Label htmlFor="date">Trainingstag</Label>
               <Input id="date" name="date" type="date" defaultValue={selectedDate} required />
             </div>
-            <div className="space-y-1 md:col-span-2">
+            <div className="space-y-1 lg:col-span-2">
               <Label htmlFor="title">Titel</Label>
               <Input id="title" name="title" placeholder="z. B. Wassertraining Dienstag" required />
             </div>
-            <div className="md:col-span-3">
+            <div className="lg:col-span-3">
               <Button className="bg-blue-700 text-white hover:bg-blue-600">Liste erstellen</Button>
             </div>
           </form>
@@ -165,7 +165,7 @@ export default async function AttendanceDetailPage({
             <CardTitle>{selectedList.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 lg:grid-cols-3">
               <div className="rounded-md border border-border bg-accent/20 p-3">
                 <p className="text-xs text-muted-foreground">Anwesend</p>
                 <p className="text-xl font-semibold text-green-400">{presentCount}</p>

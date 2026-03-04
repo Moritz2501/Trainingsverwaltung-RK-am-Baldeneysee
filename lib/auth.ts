@@ -7,6 +7,7 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { hasRequiredRole } from "@/lib/rbac";
 import { loginSchema } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/lib/audit";
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -53,6 +54,15 @@ export const authOptions: NextAuthOptions = {
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
+        });
+
+        await createAuditLog({
+          actorId: user.id,
+          actorRole: user.role,
+          action: "LOGIN_SUCCESS",
+          targetType: "User",
+          targetId: user.id,
+          message: `Login erfolgreich für ${user.username}.`,
         });
 
         return {

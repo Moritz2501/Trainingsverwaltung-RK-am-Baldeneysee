@@ -10,7 +10,7 @@ type BrandLogoProps = {
   priority?: boolean;
 };
 
-const logoPath = process.env.NEXT_PUBLIC_BRAND_LOGO_PATH || "/rk-baldeneysee-logo.svg";
+const logoPath = process.env.NEXT_PUBLIC_BRAND_LOGO_PATH || "/rk.png";
 
 export function BrandLogo({ size = 44, className, priority = false }: BrandLogoProps) {
   const fallbackSources = useMemo(() => {

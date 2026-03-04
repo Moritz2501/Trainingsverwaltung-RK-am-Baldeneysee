@@ -81,11 +81,13 @@ input[type="date"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  min-height: 2.5rem;
   box-sizing: border-box;
 }
 
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
+  min-height: 1.2em;
 }
 
 input[type="date"]::-webkit-datetime-edit {
@@ -110,6 +112,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @supports (-webkit-touch-callout: none) {
   input[type="date"] {
     padding-right: 2.25rem;
+    font-size: 16px;
+  }
+
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+    display: flex;
+    align-items: center;
   }
 }
 

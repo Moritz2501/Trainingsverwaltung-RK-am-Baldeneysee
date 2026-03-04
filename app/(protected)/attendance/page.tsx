@@ -44,7 +44,7 @@ export default async function AttendanceGroupsPage() {
 
       {groups.length === 0 ? <p className="text-sm text-muted-foreground">Keine passenden Trainingsgruppen gefunden.</p> : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => (
           <Card key={group.id}>
             <CardHeader>

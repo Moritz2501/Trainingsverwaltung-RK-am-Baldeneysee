@@ -33,25 +33,25 @@ export default async function GroupsPage() {
             <CardTitle>Neue Trainingsgruppe anlegen</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createGroupAction} className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-1 md:col-span-1">
+            <form action={createGroupAction} className="grid gap-3 lg:grid-cols-2">
+              <div className="space-y-1 lg:col-span-1">
                 <Label htmlFor="name">Name</Label>
                 <Input id="name" name="name" required />
               </div>
-              <div className="space-y-1 md:col-span-2">
+              <div className="space-y-1 lg:col-span-2">
                 <Label htmlFor="description">Beschreibung</Label>
                 <Textarea id="description" name="description" required />
               </div>
-              <label className="flex items-center gap-2 text-sm md:col-span-2">
+              <label className="flex items-center gap-2 text-sm lg:col-span-2">
                 <input type="checkbox" name="active" defaultChecked /> Aktiv
               </label>
-              <Button className="bg-blue-700 text-white hover:bg-blue-600 md:col-span-2">Speichern</Button>
+              <Button className="bg-blue-700 text-white hover:bg-blue-600 lg:col-span-2">Speichern</Button>
             </form>
           </CardContent>
         </Card>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => (
           <Card key={group.id}>
             <CardHeader>

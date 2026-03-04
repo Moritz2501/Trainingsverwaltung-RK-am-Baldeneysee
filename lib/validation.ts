@@ -133,13 +133,25 @@ export const calendarEventSchema = z
     type: z.nativeEnum(EventType),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
+    durationHours: z.coerce.number().positive("Stundenzahl muss größer als 0 sein.").max(24, "Maximal 24 Stunden pro Termin."),
     location: z.string().min(2).max(180),
     description: z.string().min(2).max(2000),
+    groupIds: z.array(z.string().cuid()).default([]),
+    trainerIds: z.array(z.string().cuid()).default([]),
   })
   .refine((data) => data.endDate >= data.startDate, {
     message: "Enddatum muss nach dem Startdatum liegen.",
     path: ["endDate"],
   });
+
+export const updateTrainerCompensationSchema = z.object({
+  userId: z.string().cuid(),
+  hourlyRate: z.coerce.number().min(0, "Stundensatz darf nicht negativ sein.").max(500, "Stundensatz ist zu hoch."),
+});
+
+export const markTrainerPayoutSchema = z.object({
+  userId: z.string().cuid(),
+});
 
 export const announcementSchema = z
   .object({

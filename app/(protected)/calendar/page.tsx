@@ -11,9 +11,25 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default async function CalendarPage() {
   const session = await requireAuth();
-  const events = await prisma.calendarEvent.findMany({
-    orderBy: { startDate: "asc" },
-  });
+  const [events, groups, trainers] = await Promise.all([
+    prisma.calendarEvent.findMany({
+      include: {
+        groups: { select: { id: true, name: true } },
+        trainers: { select: { id: true, displayName: true } },
+      },
+      orderBy: { startDate: "asc" },
+    }),
+    prisma.trainingGroup.findMany({
+      where: { active: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.user.findMany({
+      where: { active: true, role: { in: [Role.TRAINER, Role.GRUPPEN_VERWALTUNG] } },
+      orderBy: { displayName: "asc" },
+      select: { id: true, displayName: true },
+    }),
+  ]);
 
   const canEdit = canManageCalendar(session.user.role);
 
@@ -27,7 +43,7 @@ export default async function CalendarPage() {
             <CardTitle>Neuer Termin (Regatta/Veranstaltung)</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createCalendarEventAction} className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <form action={createCalendarEventAction} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="title">Titel</Label>
                 <Input id="title" name="title" required />
@@ -47,15 +63,41 @@ export default async function CalendarPage() {
                 <Label htmlFor="endDate">Enddatum</Label>
                 <Input id="endDate" name="endDate" type="date" required />
               </div>
-              <div className="space-y-1 md:col-span-2">
+              <div className="space-y-1">
+                <Label htmlFor="durationHours">Stundenanzahl</Label>
+                <Input id="durationHours" name="durationHours" type="number" min="0.25" step="0.25" defaultValue="1" required />
+              </div>
+              <div className="space-y-1 lg:col-span-2">
                 <Label htmlFor="location">Ort</Label>
                 <Input id="location" name="location" required />
               </div>
-              <div className="space-y-1 md:col-span-2">
+              <div className="space-y-1 lg:col-span-2">
                 <Label htmlFor="description">Beschreibung</Label>
                 <Textarea id="description" name="description" required />
               </div>
-              <div className="md:col-span-2">
+              <div className="space-y-2 lg:col-span-2">
+                <Label>Teilnehmende Trainingsgruppen</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {groups.map((group) => (
+                    <label key={group.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                      <input type="checkbox" name="groupIds" value={group.id} />
+                      <span className="truncate">{group.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2 lg:col-span-2">
+                <Label>Teilnehmende Trainer</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {trainers.map((trainer) => (
+                    <label key={trainer.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                      <input type="checkbox" name="trainerIds" value={trainer.id} />
+                      <span className="truncate">{trainer.displayName}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-2">
                 <Button className="bg-blue-700 text-white hover:bg-blue-600">Eintrag speichern</Button>
               </div>
             </form>
@@ -78,6 +120,13 @@ export default async function CalendarPage() {
               <p className="text-sm text-muted-foreground">
                 {event.startDate.toLocaleDateString("de-DE")} – {event.endDate.toLocaleDateString("de-DE")} | {event.location}
               </p>
+              <p className="text-sm text-muted-foreground">Dauer: {Number(event.durationHours.toString()).toLocaleString("de-DE")} Stunden</p>
+              <p className="text-xs text-muted-foreground">
+                Gruppen: {event.groups.map((group) => group.name).join(", ") || "Keine ausgewählt"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Trainer: {event.trainers.map((trainer) => trainer.displayName).join(", ") || "Keine ausgewählt"}
+              </p>
               <p className="mt-1 text-sm">{event.description}</p>
               {session.user.role !== Role.TRAINER ? (
                 <form action={deleteCalendarEventAction} className="mt-3">
@@ -96,12 +145,13 @@ export default async function CalendarPage() {
         <CardHeader>
           <CardTitle>Kalenderansicht</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <CardContent className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {events.map((event) => (
             <div key={`calendar-${event.id}`} className="rounded-lg border border-border bg-accent/20 p-3">
               <p className="text-xs text-muted-foreground">{event.startDate.toLocaleDateString("de-DE")}</p>
               <p className="font-semibold">{event.title}</p>
               <p className="text-sm text-muted-foreground">{event.location}</p>
+              <p className="text-xs text-muted-foreground">{Number(event.durationHours.toString()).toLocaleString("de-DE")} h</p>
             </div>
           ))}
           {events.length === 0 ? <p className="text-sm text-muted-foreground">Keine Einträge für die Kalenderansicht.</p> : null}

@@ -21,12 +21,14 @@ import {
   attendanceSaveSchema,
   announcementSchema,
   moveAthletesSchema,
+  markTrainerPayoutSchema,
   athleteSchema,
   athleteTrainingEntrySchema,
   assignmentSchema,
   calendarEventSchema,
   changePasswordSchema,
   createUserSchema,
+  updateTrainerCompensationSchema,
   resetPasswordSchema,
   trainingGroupSchema,
   updateAthleteSchema,
@@ -35,9 +37,14 @@ import {
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
+import { computeCompensationSummary } from "@/lib/compensation";
 
 function checkboxValue(value: FormDataEntryValue | null) {
   return value === "on" || value === "true";
+}
+
+function twoDecimals(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 export async function createUserAction(formData: FormData) {
@@ -224,8 +231,17 @@ export async function createGroupAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  await prisma.trainingGroup.create({
+  const group = await prisma.trainingGroup.create({
     data: parsed.data,
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "GROUP_CREATE",
+    targetType: "TrainingGroup",
+    targetId: group.id,
+    message: `Trainingsgruppe ${group.name} erstellt.`,
   });
 
   revalidatePath("/groups");
@@ -261,9 +277,19 @@ export async function updateGroupAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  await prisma.trainingGroup.update({
+  const updated = await prisma.trainingGroup.update({
     where: { id: groupId },
     data: parsed.data,
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "GROUP_UPDATE",
+    targetType: "TrainingGroup",
+    targetId: groupId,
+    message: `Trainingsgruppe ${updated.name} aktualisiert.`,
+    metadata: { active: updated.active },
   });
 
   revalidatePath("/groups");
@@ -281,7 +307,17 @@ export async function deleteGroupAction(formData: FormData) {
     throw new Error("Gruppen-ID fehlt");
   }
 
+  const group = await prisma.trainingGroup.findUnique({ where: { id: groupId }, select: { name: true } });
   await prisma.trainingGroup.delete({ where: { id: groupId } });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "GROUP_DELETE",
+    targetType: "TrainingGroup",
+    targetId: groupId,
+    message: `Trainingsgruppe ${group?.name ?? groupId} gelöscht.`,
+  });
 
   revalidatePath("/groups");
   revalidatePath("/dashboard");
@@ -313,6 +349,16 @@ export async function assignTrainerToGroupAction(formData: FormData) {
       skipDuplicates: true,
     });
   }
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "GROUP_ASSIGN_TRAINERS",
+    targetType: "TrainingGroup",
+    targetId: parsed.data.groupId,
+    message: `Trainer-Zuweisungen für Gruppe ${parsed.data.groupId} aktualisiert.`,
+    metadata: { userIds: parsed.data.userIds },
+  });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);
 }
@@ -419,6 +465,16 @@ export async function saveGroupAttendanceAction(formData: FormData) {
     ),
   );
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATTENDANCE_SAVE",
+    targetType: "TrainingGroup",
+    targetId: parsed.data.groupId,
+    message: `Anwesenheit für ${parsed.data.date.toLocaleDateString("de-DE")} gespeichert.`,
+    metadata: { items: parsed.data.items.length },
+  });
+
   revalidatePath("/attendance");
   revalidatePath(`/attendance/${parsed.data.groupId}`);
 }
@@ -446,6 +502,16 @@ export async function createAttendanceListAction(formData: FormData) {
       createdById: session.user.id,
     },
     select: { id: true, groupId: true },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATTENDANCE_LIST_CREATE",
+    targetType: "AttendanceList",
+    targetId: list.id,
+    message: `Anwesenheitsliste ${parsed.data.title} erstellt.`,
+    metadata: { groupId: parsed.data.groupId, date: parsed.data.date.toISOString() },
   });
 
   revalidatePath("/attendance");
@@ -524,6 +590,16 @@ export async function updateAttendanceListAction(formData: FormData) {
     ),
   );
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATTENDANCE_LIST_UPDATE",
+    targetType: "AttendanceList",
+    targetId: list.id,
+    message: `Anwesenheitsliste ${list.title} aktualisiert.`,
+    metadata: { items: parsed.data.items.length, isFinalized: list.isFinalized },
+  });
+
   revalidatePath("/attendance");
   revalidatePath(`/attendance/${list.groupId}`);
 }
@@ -559,6 +635,15 @@ export async function finalizeAttendanceListAction(formData: FormData) {
   await prisma.attendanceList.update({
     where: { id: list.id },
     data: { isFinalized: true },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATTENDANCE_LIST_FINALIZE",
+    targetType: "AttendanceList",
+    targetId: list.id,
+    message: `Anwesenheitsliste ${list.title} finalisiert.`,
   });
 
   revalidatePath("/attendance");
@@ -599,6 +684,16 @@ export async function deleteAttendanceListAction(formData: FormData) {
 
   await prisma.attendanceList.delete({ where: { id: list.id } });
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATTENDANCE_LIST_DELETE",
+    targetType: "AttendanceList",
+    targetId: list.id,
+    message: `Anwesenheitsliste ${list.title} gelöscht.`,
+    metadata: { isFinalized: list.isFinalized },
+  });
+
   revalidatePath("/attendance");
   revalidatePath(`/attendance/${list.groupId}`);
 }
@@ -622,13 +717,23 @@ export async function createAthleteAction(formData: FormData) {
 
   await canEditGroup(session.user.id, session.user.role, parsed.data.groupId);
 
-  await prisma.athlete.create({
+  const athlete = await prisma.athlete.create({
     data: {
       groupId: parsed.data.groupId,
       name: parsed.data.name,
       birthDate: parsed.data.birthDate ?? null,
       active: parsed.data.active,
     },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_CREATE",
+    targetType: "Athlete",
+    targetId: athlete.id,
+    message: `Sportler ${athlete.name} erstellt.`,
+    metadata: { groupId: parsed.data.groupId },
   });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);
@@ -679,6 +784,16 @@ export async function createAthletesBatchAction(formData: FormData) {
     data: athletesToCreate,
   });
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_BATCH_CREATE",
+    targetType: "TrainingGroup",
+    targetId: parsed.data.groupId,
+    message: `${athletesToCreate.length} Sportler per Sammelimport erstellt.`,
+    metadata: { count: athletesToCreate.length },
+  });
+
   revalidatePath(`/groups/${parsed.data.groupId}`);
   revalidatePath("/athletes");
 }
@@ -703,13 +818,23 @@ export async function updateAthleteAction(formData: FormData) {
 
   await canEditGroup(session.user.id, session.user.role, parsed.data.groupId);
 
-  await prisma.athlete.update({
+  const athlete = await prisma.athlete.update({
     where: { id: parsed.data.id },
     data: {
       name: parsed.data.name,
       birthDate: parsed.data.birthDate ?? null,
       active: parsed.data.active,
     },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_UPDATE",
+    targetType: "Athlete",
+    targetId: athlete.id,
+    message: `Sportler ${athlete.name} aktualisiert.`,
+    metadata: { groupId: parsed.data.groupId, active: parsed.data.active },
   });
 
   revalidatePath(`/groups/${parsed.data.groupId}`);
@@ -726,7 +851,18 @@ export async function deleteAthleteAction(formData: FormData) {
 
   await canEditGroup(session.user.id, session.user.role, groupId);
 
+  const athlete = await prisma.athlete.findUnique({ where: { id }, select: { id: true, name: true } });
   await prisma.athlete.delete({ where: { id } });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_DELETE",
+    targetType: "Athlete",
+    targetId: id,
+    message: `Sportler ${athlete?.name ?? id} gelöscht.`,
+    metadata: { groupId },
+  });
   revalidatePath(`/groups/${groupId}`);
   revalidatePath("/athletes");
 }
@@ -755,13 +891,23 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
 
   await canEditGroup(session.user.id, session.user.role, athlete.groupId);
 
-  await prisma.athleteTrainingEntry.create({
+  const entry = await prisma.athleteTrainingEntry.create({
     data: {
       athleteId: parsed.data.athleteId,
       trainingDate: parsed.data.trainingDate,
       result: parsed.data.result,
       notes: parsed.data.notes ?? null,
     },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_TRAINING_ENTRY_CREATE",
+    targetType: "AthleteTrainingEntry",
+    targetId: entry.id,
+    message: `Trainingseintrag für Sportler ${athlete.id} erstellt.`,
+    metadata: { athleteId: athlete.id, groupId: athlete.groupId },
   });
 
   revalidatePath(`/groups/${athlete.groupId}`);
@@ -794,6 +940,16 @@ export async function deleteAthleteTrainingEntryAction(formData: FormData) {
   await canEditGroup(session.user.id, session.user.role, entry.athlete.groupId);
 
   await prisma.athleteTrainingEntry.delete({ where: { id: entry.id } });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_TRAINING_ENTRY_DELETE",
+    targetType: "AthleteTrainingEntry",
+    targetId: entry.id,
+    message: `Trainingseintrag ${entry.id} gelöscht.`,
+    metadata: { athleteId: entry.athleteId, groupId: entry.athlete.groupId },
+  });
 
   revalidatePath(`/groups/${entry.athlete.groupId}`);
 }
@@ -831,6 +987,20 @@ export async function moveAthletesAction(formData: FormData) {
     },
   });
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_MOVE",
+    targetType: "TrainingGroup",
+    targetId: parsed.data.sourceGroupId,
+    message: `${parsed.data.athleteIds.length} Sportler verschoben.`,
+    metadata: {
+      sourceGroupId: parsed.data.sourceGroupId,
+      targetGroupId: parsed.data.targetGroupId,
+      athleteIds: parsed.data.athleteIds,
+    },
+  });
+
   revalidatePath(`/groups/${parsed.data.sourceGroupId}`);
   revalidatePath(`/groups/${parsed.data.targetGroupId}`);
   revalidatePath("/athletes");
@@ -849,6 +1019,16 @@ export async function removeTrainerFromGroupAction(formData: FormData) {
     where: { groupId, userId },
   });
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "GROUP_REMOVE_TRAINER",
+    targetType: "TrainingGroup",
+    targetId: groupId,
+    message: `Trainer ${userId} aus Gruppe entfernt.`,
+    metadata: { userId },
+  });
+
   revalidatePath(`/groups/${groupId}`);
 }
 
@@ -863,18 +1043,48 @@ export async function createCalendarEventAction(formData: FormData) {
     type: String(formData.get("type") ?? EventType.VERANSTALTUNG) as EventType,
     startDate: String(formData.get("startDate") ?? ""),
     endDate: String(formData.get("endDate") ?? ""),
+    durationHours: String(formData.get("durationHours") ?? "1"),
     location: String(formData.get("location") ?? ""),
     description: String(formData.get("description") ?? ""),
+    groupIds: formData.getAll("groupIds").map((value) => String(value)),
+    trainerIds: formData.getAll("trainerIds").map((value) => String(value)),
   });
 
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  await prisma.calendarEvent.create({
+  const event = await prisma.calendarEvent.create({
     data: {
-      ...parsed.data,
+      title: parsed.data.title,
+      type: parsed.data.type,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      durationHours: twoDecimals(parsed.data.durationHours),
+      location: parsed.data.location,
+      description: parsed.data.description,
       createdById: session.user.id,
+      groups: {
+        connect: parsed.data.groupIds.map((id) => ({ id })),
+      },
+      trainers: {
+        connect: parsed.data.trainerIds.map((id) => ({ id })),
+      },
+    },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "CALENDAR_EVENT_CREATE",
+    targetType: "CalendarEvent",
+    targetId: event.id,
+    message: `Kalendereintrag ${event.title} erstellt.`,
+    metadata: {
+      type: parsed.data.type,
+      durationHours: twoDecimals(parsed.data.durationHours),
+      groupIds: parsed.data.groupIds,
+      trainerIds: parsed.data.trainerIds,
     },
   });
 
@@ -893,8 +1103,11 @@ export async function updateCalendarEventAction(formData: FormData) {
     type: String(formData.get("type") ?? EventType.VERANSTALTUNG) as EventType,
     startDate: String(formData.get("startDate") ?? ""),
     endDate: String(formData.get("endDate") ?? ""),
+    durationHours: String(formData.get("durationHours") ?? "1"),
     location: String(formData.get("location") ?? ""),
     description: String(formData.get("description") ?? ""),
+    groupIds: formData.getAll("groupIds").map((value) => String(value)),
+    trainerIds: formData.getAll("trainerIds").map((value) => String(value)),
   });
 
   if (!parsed.success) {
@@ -903,7 +1116,36 @@ export async function updateCalendarEventAction(formData: FormData) {
 
   await prisma.calendarEvent.update({
     where: { id: eventId },
-    data: parsed.data,
+    data: {
+      title: parsed.data.title,
+      type: parsed.data.type,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      durationHours: twoDecimals(parsed.data.durationHours),
+      location: parsed.data.location,
+      description: parsed.data.description,
+      groups: {
+        set: parsed.data.groupIds.map((id) => ({ id })),
+      },
+      trainers: {
+        set: parsed.data.trainerIds.map((id) => ({ id })),
+      },
+    },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "CALENDAR_EVENT_UPDATE",
+    targetType: "CalendarEvent",
+    targetId: eventId,
+    message: `Kalendereintrag ${eventId} aktualisiert.`,
+    metadata: {
+      type: parsed.data.type,
+      durationHours: twoDecimals(parsed.data.durationHours),
+      groupIds: parsed.data.groupIds,
+      trainerIds: parsed.data.trainerIds,
+    },
   });
 
   revalidatePath("/calendar");
@@ -916,7 +1158,17 @@ export async function deleteCalendarEventAction(formData: FormData) {
   }
 
   const id = String(formData.get("id") ?? "");
+  const event = await prisma.calendarEvent.findUnique({ where: { id }, select: { title: true } });
   await prisma.calendarEvent.delete({ where: { id } });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "CALENDAR_EVENT_DELETE",
+    targetType: "CalendarEvent",
+    targetId: id,
+    message: `Kalendereintrag ${event?.title ?? id} gelöscht.`,
+  });
   revalidatePath("/calendar");
 }
 
@@ -937,11 +1189,21 @@ export async function createAnnouncementAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
   }
 
-  await prisma.announcement.create({
+  const announcement = await prisma.announcement.create({
     data: {
       ...parsed.data,
       createdById: session.user.id,
     },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ANNOUNCEMENT_CREATE",
+    targetType: "Announcement",
+    targetId: announcement.id,
+    message: `Ankündigung ${announcement.title} erstellt.`,
+    metadata: { priority: announcement.priority },
   });
 
   revalidatePath("/announcements");
@@ -955,9 +1217,18 @@ export async function archiveAnnouncementAction(formData: FormData) {
   }
 
   const id = String(formData.get("id") ?? "");
-  await prisma.announcement.update({
+  const announcement = await prisma.announcement.update({
     where: { id },
     data: { archived: true },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ANNOUNCEMENT_ARCHIVE",
+    targetType: "Announcement",
+    targetId: id,
+    message: `Ankündigung ${announcement.title} archiviert.`,
   });
 
   revalidatePath("/announcements");
@@ -992,5 +1263,132 @@ export async function changeOwnPasswordAction(formData: FormData) {
     data: { passwordHash },
   });
 
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "USER_CHANGE_OWN_PASSWORD",
+    targetType: "User",
+    targetId: session.user.id,
+    message: "Eigenes Passwort geändert.",
+  });
+
   revalidatePath("/profile");
+}
+
+export async function updateTrainerCompensationAction(formData: FormData) {
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
+
+  const parsed = updateTrainerCompensationSchema.safeParse({
+    userId: String(formData.get("userId") ?? ""),
+    hourlyRate: String(formData.get("hourlyRate") ?? "0"),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true, displayName: true, role: true },
+  });
+
+  if (!user) {
+    throw new Error("Trainer nicht gefunden.");
+  }
+
+  if (user.role !== Role.TRAINER && user.role !== Role.GRUPPEN_VERWALTUNG) {
+    throw new Error("Stundensatz kann nur für Trainer gesetzt werden.");
+  }
+
+  const normalizedRate = twoDecimals(parsed.data.hourlyRate);
+  await prisma.trainerCompensation.upsert({
+    where: { userId: parsed.data.userId },
+    update: { hourlyRate: normalizedRate },
+    create: {
+      userId: parsed.data.userId,
+      hourlyRate: normalizedRate,
+    },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "TRAINER_COMPENSATION_RATE_SET",
+    targetType: "User",
+    targetId: user.id,
+    message: `Stundensatz für ${user.displayName} gesetzt.`,
+    metadata: { hourlyRate: normalizedRate },
+  });
+
+  revalidatePath("/compensation");
+  revalidatePath("/dashboard");
+}
+
+export async function markTrainerPayoutAction(formData: FormData) {
+  const session = await requireRole([Role.ADMIN, Role.LEITUNG]);
+
+  const parsed = markTrainerPayoutSchema.safeParse({
+    userId: String(formData.get("userId") ?? ""),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: {
+      id: true,
+      displayName: true,
+      role: true,
+      compensation: {
+        select: {
+          hourlyRate: true,
+          totalPaid: true,
+          lastPayoutAt: true,
+        },
+      },
+      participatingEvents: {
+        select: { endDate: true, durationHours: true },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new Error("Trainer nicht gefunden.");
+  }
+
+  if (user.role !== Role.TRAINER && user.role !== Role.GRUPPEN_VERWALTUNG) {
+    throw new Error("Auszahlung kann nur für Trainer markiert werden.");
+  }
+
+  const summary = computeCompensationSummary(user.participatingEvents, user.compensation);
+  const amountToMarkAsPaid = summary.earnedSincePayout;
+
+  await prisma.trainerCompensation.upsert({
+    where: { userId: user.id },
+    update: {
+      totalPaid: twoDecimals(summary.totalPaid + amountToMarkAsPaid),
+      lastPayoutAt: new Date(),
+    },
+    create: {
+      userId: user.id,
+      hourlyRate: summary.hourlyRate,
+      totalPaid: amountToMarkAsPaid,
+      lastPayoutAt: new Date(),
+    },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "TRAINER_COMPENSATION_MARK_PAID",
+    targetType: "User",
+    targetId: user.id,
+    message: `Auszahlung für ${user.displayName} als erledigt markiert.`,
+    metadata: { amountMarkedAsPaid: amountToMarkAsPaid },
+  });
+
+  revalidatePath("/compensation");
+  revalidatePath("/dashboard");
 }
