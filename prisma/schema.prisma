@@ -36,6 +36,13 @@ enum AttendanceStatus {
   ABWESEND
 }
 
+enum AthleteDistance {
+  M100
+  M500
+  M1000
+  M2000
+}
+
 model User {
   id             String                    @id @default(cuid())
   username       String                    @unique
@@ -202,13 +209,17 @@ model AttendanceEntry {
 }
 
 model AthleteTrainingEntry {
-  id           String   @id @default(cuid())
-  athleteId    String
-  trainingDate DateTime
-  result       String
-  notes        String?
-  createdAt    DateTime @default(now())
-  athlete      Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  id                 String          @id @default(cuid())
+  athleteId          String
+  trainingDate       DateTime
+  result             String
+  notes              String?
+  distance           AthleteDistance?
+  strokeRate         Int?
+  totalTimeSeconds   Decimal?        @db.Decimal(8, 2)
+  splitPer500Seconds Decimal?        @db.Decimal(8, 2)
+  createdAt          DateTime        @default(now())
+  athlete            Athlete         @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
   @@index([athleteId, trainingDate])
 }

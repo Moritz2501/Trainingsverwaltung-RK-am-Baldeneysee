@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AthleteValuesModal } from "@/components/athlete-values-modal";
 
 function formatDateInputValue(date: Date | null) {
   if (!date) {
@@ -134,6 +135,7 @@ export default async function AthletesDatabasePage({
                   </form>
 
                   <div className="flex flex-wrap items-center gap-3">
+                    <AthleteValuesModal athleteId={athlete.id} athleteName={athlete.name} />
                     <form action={deleteAthleteAction}>
                       <input type="hidden" name="id" value={athlete.id} />
                       <input type="hidden" name="groupId" value={athlete.groupId} />

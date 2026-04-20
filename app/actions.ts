@@ -23,6 +23,7 @@ import {
   moveAthletesSchema,
   markTrainerPayoutSchema,
   athleteSchema,
+  athletePerformanceValueSchema,
   athleteTrainingEntrySchema,
   assignmentSchema,
   calendarEventSchema,
@@ -46,6 +47,60 @@ function checkboxValue(value: FormDataEntryValue | null) {
 
 function twoDecimals(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function parseDurationToSeconds(raw: string) {
+  const normalized = raw.trim().replace(",", ".");
+  if (!normalized) {
+    throw new Error("Bitte eine Gesamtzeit eingeben.");
+  }
+
+  if (/^\d+(\.\d+)?$/.test(normalized)) {
+    const seconds = Number(normalized);
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+      throw new Error("Ungültige Gesamtzeit. Bitte ein positives Zeitformat nutzen.");
+    }
+    return twoDecimals(seconds);
+  }
+
+  const parts = normalized.split(":");
+  if (parts.length < 2 || parts.length > 3) {
+    throw new Error("Ungültiges Zeitformat. Erlaubt: ss, mm:ss oder hh:mm:ss.");
+  }
+
+  const [hoursPart, minutesPart, secondsPart] = parts.length === 3 ? parts : ["0", parts[0], parts[1]];
+  const hours = Number(hoursPart);
+  const minutes = Number(minutesPart);
+  const seconds = Number(secondsPart);
+
+  if (![hours, minutes, seconds].every((value) => Number.isFinite(value) && value >= 0)) {
+    throw new Error("Ungültiges Zeitformat. Bitte nur Zahlen und ':' nutzen.");
+  }
+
+  if (minutes >= 60 || seconds >= 60) {
+    throw new Error("Minuten und Sekunden müssen kleiner als 60 sein.");
+  }
+
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+  if (totalSeconds <= 0) {
+    throw new Error("Gesamtzeit muss größer als 0 sein.");
+  }
+
+  return twoDecimals(totalSeconds);
+}
+
+function formatSecondsForResult(totalSeconds: number) {
+  const fullSeconds = Math.floor(totalSeconds);
+  const hours = Math.floor(fullSeconds / 3600);
+  const minutes = Math.floor((fullSeconds % 3600) / 60);
+  const seconds = fullSeconds % 60;
+  const fraction = Math.round((totalSeconds - fullSeconds) * 100);
+  const timeWithFraction = `${String(seconds).padStart(2, "0")}.${String(fraction).padStart(2, "0")}`;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${timeWithFraction}`;
+  }
+  return `${minutes}:${timeWithFraction}`;
 }
 
 export async function createUserAction(formData: FormData) {
@@ -912,6 +967,76 @@ export async function createAthleteTrainingEntryAction(formData: FormData) {
   });
 
   revalidatePath(`/groups/${athlete.groupId}`);
+}
+
+export async function createAthletePerformanceValueAction(formData: FormData) {
+  const session = await requireAuth();
+  if (!canManageAthletes(session.user.role)) {
+    return;
+  }
+
+  const parsed = athletePerformanceValueSchema.safeParse({
+    athleteId: String(formData.get("athleteId") ?? ""),
+    distance: String(formData.get("distance") ?? ""),
+    strokeRate: String(formData.get("strokeRate") ?? ""),
+    totalTime: String(formData.get("totalTime") ?? ""),
+    splitPer500: String(formData.get("splitPer500") ?? ""),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Ungültige Eingaben");
+  }
+
+  const athlete = await prisma.athlete.findUnique({ where: { id: parsed.data.athleteId } });
+  if (!athlete) {
+    throw new Error("Sportler nicht gefunden");
+  }
+
+  await canEditGroup(session.user.id, session.user.role, athlete.groupId);
+
+  const totalTimeSeconds = parseDurationToSeconds(parsed.data.totalTime);
+  const splitPer500Seconds = twoDecimals(parsed.data.splitPer500);
+  const distanceTextMap = {
+    M100: "100m",
+    M500: "500m",
+    M1000: "1000m",
+    M2000: "2000m",
+  } as const;
+  const distanceText = distanceTextMap[parsed.data.distance];
+
+  const result = `${distanceText} | Schlagzahl ${parsed.data.strokeRate} | Zeit ${formatSecondsForResult(totalTimeSeconds)} | Schnitt/500m ${splitPer500Seconds}`;
+
+  const entry = await prisma.athleteTrainingEntry.create({
+    data: {
+      athleteId: athlete.id,
+      trainingDate: new Date(),
+      result,
+      distance: parsed.data.distance,
+      strokeRate: parsed.data.strokeRate,
+      totalTimeSeconds,
+      splitPer500Seconds,
+    },
+  });
+
+  await createAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "ATHLETE_PERFORMANCE_ENTRY_CREATE",
+    targetType: "AthleteTrainingEntry",
+    targetId: entry.id,
+    message: `Leistungswert für Sportler ${athlete.id} eingetragen.`,
+    metadata: {
+      athleteId: athlete.id,
+      groupId: athlete.groupId,
+      distance: parsed.data.distance,
+      strokeRate: parsed.data.strokeRate,
+      totalTimeSeconds,
+      splitPer500Seconds,
+    },
+  });
+
+  revalidatePath(`/groups/${athlete.groupId}`);
+  revalidatePath("/athletes");
 }
 
 export async function deleteAthleteTrainingEntryAction(formData: FormData) {

@@ -93,6 +93,21 @@ export const athleteTrainingEntrySchema = z.object({
   }, z.string().max(2000).optional()),
 });
 
+export const athletePerformanceValueSchema = z.object({
+  athleteId: z.string().cuid(),
+  distance: z.enum(["M100", "M500", "M1000", "M2000"]),
+  strokeRate: z.coerce.number().int().min(1, "Schlagzahl muss mindestens 1 sein.").max(200, "Schlagzahl ist zu hoch."),
+  totalTime: z.string().trim().min(3, "Bitte eine Gesamtzeit eingeben.").max(20, "Gesamtzeit ist zu lang."),
+  splitPer500: z
+    .string()
+    .trim()
+    .min(1, "Bitte einen Wert für Schnitt/500m eingeben.")
+    .transform((value) => Number(value.replace(",", ".")))
+    .refine((value) => Number.isFinite(value), "Schnitt/500m muss eine Zahl sein.")
+    .refine((value) => value >= 0, "Schnitt/500m darf nicht negativ sein.")
+    .refine((value) => value <= 3600, "Schnitt/500m ist unrealistisch hoch."),
+});
+
 export const attendanceItemSchema = z.object({
   athleteId: z.string().cuid(),
   status: z.enum(["ANWESEND", "ABWESEND"]),
