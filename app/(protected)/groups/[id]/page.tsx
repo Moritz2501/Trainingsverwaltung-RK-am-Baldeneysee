@@ -4,13 +4,13 @@ import {
   assignTrainerToGroupAction,
   createAthleteAction,
   createAthletesBatchAction,
-  createAthleteTrainingEntryAction,
   deleteAthleteAction,
   deleteAthleteTrainingEntryAction,
   moveAthletesAction,
   updateAthleteAction,
   updateGroupAction,
 } from "@/app/actions";
+import { AthleteValuesModal } from "@/components/athlete-values-modal";
 import { requireAuth } from "@/lib/auth";
 import { canManageGroups, canMoveAthletes } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
@@ -260,26 +260,34 @@ export default async function GroupDetailPage({
                 ) : null}
 
                 {canEdit ? (
-                  <form action={createAthleteTrainingEntryAction} className="ipad-stack grid grid-cols-1 gap-2 md:grid-cols-4 [&>*]:min-w-0">
-                    <input type="hidden" name="athleteId" value={athlete.id} />
-                    <Input type="date" name="trainingDate" className="w-full" required />
-                        <Input name="result" placeholder="Trainingsergebnis" required className="md:col-span-2" />
-                        <Textarea name="notes" placeholder="Notizen (optional)" className="md:col-span-4" />
-                    <Button size="sm" className="bg-blue-700 text-white hover:bg-blue-600">
-                      Ergebnis speichern
-                    </Button>
-                  </form>
+                  <div>
+                    <AthleteValuesModal athleteId={athlete.id} athleteName={athlete.name} />
+                  </div>
                 ) : null}
 
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Letzte Trainingsdaten</p>
+                  <p className="text-sm font-medium">Letzte Leistungswerte</p>
                   {athlete.entries.length === 0 ? <p className="text-xs text-muted-foreground">Noch keine Einträge.</p> : null}
                   {athlete.entries.map((entry) => (
                     <div key={entry.id} className="rounded-md border border-border bg-accent/20 p-2 text-sm">
                       <div className="flex flex-wrap items-start justify-between gap-2">
-                        <p>
-                          {entry.trainingDate.toLocaleDateString("de-DE")}: {entry.result}
-                        </p>
+                        <div className="space-y-0.5">
+                          <p className="text-xs text-muted-foreground">{entry.trainingDate.toLocaleDateString("de-DE")}</p>
+                          {entry.distance ? (
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+                              <span className="text-muted-foreground">Strecke</span>
+                              <span>{entry.distance === "M100" ? "100m" : entry.distance === "M500" ? "500m" : entry.distance === "M1000" ? "1000m" : "2000m"}</span>
+                              <span className="text-muted-foreground">Schlagzahl</span>
+                              <span>{entry.strokeRate}</span>
+                              <span className="text-muted-foreground">Gesamtzeit</span>
+                              <span>{entry.result.split(" | ")[2]?.replace("Zeit ", "") ?? "-"}</span>
+                              <span className="text-muted-foreground">Schnitt/500m</span>
+                              <span>{entry.splitPer500Seconds ? `${Number(entry.splitPer500Seconds).toFixed(1)} s` : "-"}</span>
+                            </div>
+                          ) : (
+                            <p>{entry.result}</p>
+                          )}
+                        </div>
                         {canEdit ? (
                           <form action={deleteAthleteTrainingEntryAction}>
                             <input type="hidden" name="entryId" value={entry.id} />
@@ -289,12 +297,11 @@ export default async function GroupDetailPage({
                               type="submit"
                               confirmMessage="Eintrag wirklich löschen?"
                             >
-                              Eintrag löschen
+                              Löschen
                             </ConfirmSubmitButton>
                           </form>
                         ) : null}
                       </div>
-                      {entry.notes ? <p className="mt-1 text-xs text-muted-foreground">Notiz: {entry.notes}</p> : null}
                     </div>
                   ))}
                 </div>

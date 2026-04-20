@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useTransition } from "react";
 import { createAthletePerformanceValueAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,16 +27,14 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
   const [strokeRate, setStrokeRate] = useState("");
   const [totalTime, setTotalTime] = useState("");
   const [splitPer500, setSplitPer500] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const canGoStep2 = distance.length > 0;
-  const canGoStep3 = Number(strokeRate) > 0;
+  const canGoStep3 = strokeRate !== "" && Number(strokeRate) > 0;
   const canSubmit = totalTime.trim().length > 0 && splitPer500.trim().length > 0;
 
-  const progressLabel = useMemo(() => {
-    if (step === 1) return "Schritt 1 von 3";
-    if (step === 2) return "Schritt 2 von 3";
-    return "Schritt 3 von 3";
-  }, [step]);
+  const stepLabel = step === 1 ? "Schritt 1 von 3" : step === 2 ? "Schritt 2 von 3" : "Schritt 3 von 3";
 
   function resetModal() {
     setStep(1);
@@ -44,6 +42,28 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
     setStrokeRate("");
     setTotalTime("");
     setSplitPer500("");
+    setError(null);
+  }
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    const formData = new FormData();
+    formData.set("athleteId", athleteId);
+    formData.set("distance", distance);
+    formData.set("strokeRate", strokeRate);
+    formData.set("totalTime", totalTime);
+    formData.set("splitPer500", splitPer500);
+
+    startTransition(async () => {
+      try {
+        await createAthletePerformanceValueAction(formData);
+        setOpen(false);
+        resetModal();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unbekannter Fehler beim Speichern.");
+      }
+    });
   }
 
   return (
@@ -70,16 +90,10 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
             <div className="space-y-4 pr-8">
               <div>
                 <p className="text-lg font-semibold">Werte für {athleteName}</p>
-                <p className="text-sm text-muted-foreground">{progressLabel}</p>
+                <p className="text-sm text-muted-foreground">{stepLabel}</p>
               </div>
 
-              <form action={createAthletePerformanceValueAction} className="space-y-4">
-                <input type="hidden" name="athleteId" value={athleteId} />
-                <input type="hidden" name="distance" value={distance} />
-                <input type="hidden" name="strokeRate" value={strokeRate} />
-                <input type="hidden" name="totalTime" value={totalTime} />
-                <input type="hidden" name="splitPer500" value={splitPer500} />
-
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {step === 1 ? (
                   <div className="space-y-2">
                     <Label htmlFor={`distance-${athleteId}`}>Strecke auswählen</Label>
@@ -88,7 +102,6 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
                       value={distance}
                       onChange={(event) => setDistance(event.target.value)}
                       className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
-                      required
                     >
                       <option value="">Bitte wählen</option>
                       {DISTANCES.map((entry) => (
@@ -98,9 +111,7 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
                       ))}
                     </select>
                   </div>
-                ) : null}
-
-                {step === 2 ? (
+                ) : step === 2 ? (
                   <div className="space-y-2">
                     <Label htmlFor={`strokeRate-${athleteId}`}>Schlagzahl (Rudern)</Label>
                     <Input
@@ -112,12 +123,9 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
                       value={strokeRate}
                       onChange={(event) => setStrokeRate(event.target.value)}
                       placeholder="z. B. 28"
-                      required
                     />
                   </div>
-                ) : null}
-
-                {step === 3 ? (
+                ) : (
                   <div className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor={`totalTime-${athleteId}`}>Gesamtzeit</Label>
@@ -127,11 +135,11 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
                         value={totalTime}
                         onChange={(event) => setTotalTime(event.target.value)}
                         placeholder="z. B. 7:25.30 oder 445.3"
-                        required
                       />
+                      <p className="text-xs text-muted-foreground">Format: ss, mm:ss oder hh:mm:ss (z. B. 445 oder 7:25.30)</p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`split-${athleteId}`}>Schnitt / 500m</Label>
+                      <Label htmlFor={`split-${athleteId}`}>Schnitt / 500m (in Sekunden)</Label>
                       <Input
                         id={`split-${athleteId}`}
                         type="number"
@@ -140,15 +148,16 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
                         value={splitPer500}
                         onChange={(event) => setSplitPer500(event.target.value)}
                         placeholder="z. B. 111.2"
-                        required
                       />
                     </div>
                   </div>
-                ) : null}
+                )}
+
+                {error ? <p className="rounded-md bg-destructive/10 p-2 text-sm text-red-500">{error}</p> : null}
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   {step > 1 ? (
-                    <Button type="button" variant="outline" onClick={() => setStep((current) => (current === 3 ? 2 : 1))}>
+                    <Button type="button" variant="outline" onClick={() => setStep((current) => (current === 3 ? 2 : 1) as Step)}>
                       Zurück
                     </Button>
                   ) : null}
@@ -157,19 +166,15 @@ export function AthleteValuesModal({ athleteId, athleteName }: AthleteValuesModa
                     <Button type="button" className="bg-blue-700 text-white hover:bg-blue-600" onClick={() => setStep(2)} disabled={!canGoStep2}>
                       Weiter
                     </Button>
-                  ) : null}
-
-                  {step === 2 ? (
+                  ) : step === 2 ? (
                     <Button type="button" className="bg-blue-700 text-white hover:bg-blue-600" onClick={() => setStep(3)} disabled={!canGoStep3}>
                       Weiter
                     </Button>
-                  ) : null}
-
-                  {step === 3 ? (
-                    <Button type="submit" className="bg-blue-700 text-white hover:bg-blue-600" disabled={!canSubmit}>
-                      Speichern
+                  ) : (
+                    <Button type="submit" className="bg-blue-700 text-white hover:bg-blue-600" disabled={!canSubmit || isPending}>
+                      {isPending ? "Speichere…" : "Speichern"}
                     </Button>
-                  ) : null}
+                  )}
                 </div>
               </form>
             </div>

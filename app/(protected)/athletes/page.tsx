@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AthleteValuesModal } from "@/components/athlete-values-modal";
 
 function formatDateInputValue(date: Date | null) {
   if (!date) {
@@ -40,7 +39,13 @@ export default async function AthletesDatabasePage({
   });
 
   const athletes = await prisma.athlete.findMany({
-    include: { group: true },
+    include: {
+      group: true,
+      entries: {
+        orderBy: { trainingDate: "desc" },
+        take: 5,
+      },
+    },
     orderBy: [{ active: "desc" }, { name: "asc" }],
   });
 
@@ -134,8 +139,32 @@ export default async function AthletesDatabasePage({
                     </div>
                   </form>
 
+                  {athlete.entries.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Letzte Leistungswerte</p>
+                      {athlete.entries.map((entry) => (
+                        <div key={entry.id} className="rounded-md border border-border bg-accent/20 p-2 text-xs">
+                          <p className="mb-1 text-muted-foreground">{entry.trainingDate.toLocaleDateString("de-DE")}</p>
+                          {entry.distance ? (
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                              <span className="text-muted-foreground">Strecke</span>
+                              <span>{entry.distance === "M100" ? "100m" : entry.distance === "M500" ? "500m" : entry.distance === "M1000" ? "1000m" : "2000m"}</span>
+                              <span className="text-muted-foreground">Schlagzahl</span>
+                              <span>{entry.strokeRate}</span>
+                              <span className="text-muted-foreground">Gesamtzeit</span>
+                              <span>{entry.result.split(" | ")[2]?.replace("Zeit ", "") ?? "-"}</span>
+                              <span className="text-muted-foreground">Schnitt/500m</span>
+                              <span>{entry.splitPer500Seconds ? `${Number(entry.splitPer500Seconds).toFixed(1)} s` : "-"}</span>
+                            </div>
+                          ) : (
+                            <p>{entry.result}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
                   <div className="flex flex-wrap items-center gap-3">
-                    <AthleteValuesModal athleteId={athlete.id} athleteName={athlete.name} />
                     <form action={deleteAthleteAction}>
                       <input type="hidden" name="id" value={athlete.id} />
                       <input type="hidden" name="groupId" value={athlete.groupId} />
