@@ -11,13 +11,24 @@ export function ConfirmSubmitButton({ confirmMessage, onClick, ...props }: Confi
   return (
     <Button
       {...props}
+      type="button"
       onClick={(event) => {
         const accepted = window.confirm(confirmMessage);
         if (!accepted) {
           event.preventDefault();
           return;
         }
+
         onClick?.(event);
+
+        if (event.defaultPrevented) {
+          return;
+        }
+
+        const form = event.currentTarget.form;
+        if (form) {
+          form.requestSubmit(event.currentTarget);
+        }
       }}
     />
   );
